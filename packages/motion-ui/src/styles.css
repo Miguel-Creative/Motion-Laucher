@@ -896,10 +896,10 @@ html[data-surface="tv"] body{overflow:hidden!important;}
 
 /* Slightly brighter wallpaper: local shadow only beneath the title, never a heavy full-screen veil. */
 .tv-home .tv-local-scrim {
- background:linear-gradient(90deg,rgba(4,9,17,.58) 0%,rgba(5,11,18,.30) 36%,rgba(6,13,19,.025) 75%,transparent 100%)!important;
+ background:linear-gradient(90deg,rgba(4,9,17,.48) 0%,rgba(5,11,18,.20) 36%,rgba(6,13,19,.015) 75%,transparent 100%)!important;
 }
 .tv-home .tv-bottom-fade {
- background:linear-gradient(0deg,rgba(8,11,16,.70),transparent)!important;
+ background:linear-gradient(0deg,rgba(8,11,16,.58),transparent)!important;
 }
 .tv-home .hero-details {
  white-space:normal!important;display:flex!important;flex-wrap:wrap!important;
