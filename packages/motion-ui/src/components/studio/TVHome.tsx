@@ -11,7 +11,7 @@ import { useCurrentWallpaper } from "@/lib/wallpaper";
 import { useAppState } from "@/lib/store";
 import { launchApp } from "@/lib/actions";
 import { onBridge } from "@/lib/device/bridge-channel";
-import { useNow } from "@/hooks/use-env";
+import { useNetworkClock } from "@/hooks/use-env";
 import { useSpatialNav } from "@/hooks/use-spatial-nav";
 
 /**
@@ -21,7 +21,7 @@ import { useSpatialNav } from "@/hooks/use-spatial-nav";
 export function TVHome() {
   const { wallpaper } = useCurrentWallpaper();
   const pinned = useAppState(s => s.pinned);
-  const now = useNow(30_000);
+  const now = useNetworkClock(1_000);
   const apps = availableLauncherApps();
   const native = isNativeLauncher();
   const pinnedApps = pinned.map(id => apps.find(app => app.id === id)).filter((app): app is (typeof apps)[number] => Boolean(app) && app?.pkg !== "org.xbmc.kodi");

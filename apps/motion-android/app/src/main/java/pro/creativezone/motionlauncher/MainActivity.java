@@ -11,6 +11,8 @@ import android.graphics.drawable.Drawable;
 import android.util.Base64;
 import java.io.ByteArrayOutputStream;
 import android.net.Uri;
+import android.net.ConnectivityManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
@@ -40,6 +42,8 @@ public class MainActivity extends Activity {
     private WebView web;
     private boolean inOfflineMode = false;
     private volatile String cachedAppsJson;
+    private ConnectivityManager networkManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +72,29 @@ public class MainActivity extends Activity {
         web.setWebChromeClient(new WebChromeClient() { @Override public boolean onConsoleMessage(ConsoleMessage msg) { Log.e("MotionUI",msg.message()); return true; } });
         web.setWebViewClient(new MotionWebClient());
         setContentView(web);
+        // When Wi-Fi returns, refresh the clock and restore the live UI if offline.
+        if (Build.VERSION.SDK_INT >= 24) {
+            try {
+                networkManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+                if (networkManager != null) {
+                    networkCallback = new ConnectivityManager.NetworkCallback() {
+                        @Override public void onAvailable(android.net.Network network) {
+                            if (web == null) return;
+                            web.post(() -> {
+                                if (web == null) return;
+                                if (inOfflineMode) {
+                                    inOfflineMode = false;
+                                    web.loadUrl(LIVE_URL);
+                                } else {
+                                    web.evaluateJavascript("window.dispatchEvent(new Event('online'))", null);
+                                }
+                            });
+                        }
+                    };
+                    networkManager.registerDefaultNetworkCallback(networkCallback);
+                }
+            } catch (Exception e) { Log.w("MotionUI", "Network callback unavailable"); }
+        }
         web.loadUrl(LIVE_URL);
     }
 
@@ -92,7 +119,9 @@ public class MainActivity extends Activity {
 
         @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest request) {
             Uri u = request.getUrl();
-            if (!OFFLINE_HOST.equals(u.getHost()) && !LIVE_HOST.equals(u.getHost())) return null;
+            // Never intercept LIVE_HOST: stale bundled index.html was masking cloud updates.
+            // Embedded assets are served only for explicit offline fallback.
+            if (!OFFLINE_HOST.equals(u.getHost())) return null;
             String path = u.getPath();
             if (path == null || path.equals("/")) path = "/index.html";
             if (path.contains("..") || path.indexOf('\\') >= 0) return null;
@@ -215,6 +244,11 @@ public class MainActivity extends Activity {
         super.onPause();
     }
     @Override protected void onDestroy() {
+        if (networkManager != null && networkCallback != null) {
+            try { networkManager.unregisterNetworkCallback(networkCallback); }
+            catch (Exception ignored) {}
+            networkCallback = null;
+        }
         if (web != null) {
             web.removeJavascriptInterface("MotionNative");
             web.destroy();

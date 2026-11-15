@@ -359,6 +359,12 @@ async function catalog(request:Request,env:Env,ctx:Context){
 export default {
  async fetch(request:Request,env:Env,ctx:Context){
   const path=new URL(request.url).pathname;
+  // Dedicated uncached time source, queried on Wi-Fi reconnection.
+  // This synchronizes the launcher display without requiring Android SET_TIME.
+  if(path==="/api/time")return new Response(JSON.stringify({nowMs:Date.now()}),{
+   status:200,headers:{"Content-Type":"application/json; charset=utf-8",
+     "Cache-Control":"no-store, max-age=0","X-Content-Type-Options":"nosniff"}
+  });
   if(path==="/api/catalog")return catalog(request,env,ctx);
   if(path.startsWith("/api/"))return response({error:"Rota não encontrada"},404);
   return env.ASSETS.fetch(request);

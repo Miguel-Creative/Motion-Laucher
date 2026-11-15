@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isInternationalForBR } from "../../../../apps/catalog-worker/index";
+import catalogWorker,{ isInternationalForBR } from "../../../../apps/catalog-worker/index";
 import { chooseWallpaperLayout } from "@/lib/image/smart-framing";
 
 describe("catálogo internacional para o público brasileiro", () => {
@@ -26,5 +26,17 @@ describe("wallpapers de TV sem distorção",()=>{
   expect(chooseWallpaperLayout(1280,720)).toBe("cover");
   expect(chooseWallpaperLayout(700,1050)).toBe("composite");
   expect(chooseWallpaperLayout(1600,400)).toBe("composite");
+ });
+});
+
+describe("network-synchronized clock API",()=>{
+ it("serves uncached UTC epoch when the projector connects",async()=>{
+  const before=Date.now();
+  const response=await catalogWorker.fetch(new Request("https://launcher.invalid/api/time"),{} as never,{} as never);
+  const payload=await response.json() as {nowMs:number};
+  expect(response.status).toBe(200);
+  expect(response.headers.get("Cache-Control")).toContain("no-store");
+  expect(payload.nowMs).toBeGreaterThanOrEqual(before);
+  expect(payload.nowMs).toBeLessThanOrEqual(Date.now());
  });
 });

@@ -865,3 +865,30 @@ html[data-perf=leve] .smart-artwork--composite{background:linear-gradient(115deg
 html,body,#root{height:100%;min-height:0;}
 html[data-surface="tv"] body{overflow:hidden!important;}
 .tv-home{height:100%!important;max-height:100%!important;min-height:0!important;}
+
+
+/* Header three-zone grid: brand | navigation | synchronized clock.
+   No absolute navigation positioning, so it cannot cover the logo. */
+.tv-home .tv-header{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) max-content minmax(0,1fr)!important;
+ column-gap:20px!important;align-items:center!important;
+ padding-left:28px!important;padding-right:28px!important;
+}
+.tv-home .tv-header .tv-brand-link{grid-column:1!important;justify-self:start!important;position:relative!important;z-index:3!important;max-width:100%!important;}
+.tv-home .tv-header nav{
+ grid-column:2!important;justify-self:center!important;
+ position:relative!important;top:auto!important;left:auto!important;
+ transform:none!important;width:max-content!important;max-width:none!important;
+ margin:0!important;
+}
+.tv-home .tv-header .tv-clock{grid-column:3!important;justify-self:end!important;margin:0!important;width:auto!important;min-width:84px!important;}
+.studio-header{display:grid!important;grid-template-columns:minmax(0,1fr) max-content minmax(0,1fr)!important;column-gap:18px!important;}
+.studio-header > a{grid-column:1!important;max-width:100%!important;position:relative!important;z-index:3!important;}
+.studio-header nav{grid-column:2!important;justify-self:center!important;position:static!important;transform:none!important;max-width:none!important;width:max-content!important;}
+@media(max-width:920px){
+ .tv-home .tv-header{column-gap:9px!important;padding-left:14px!important;padding-right:14px!important;}
+ .tv-home .tv-header nav{padding-left:3px!important;padding-right:3px!important;}
+ .tv-home .tv-header nav > *{padding-left:6px!important;padding-right:6px!important;font-size:11px!important;}
+ .tv-header .tv-brand-link .font-display{font-size:14px!important;}
+}
