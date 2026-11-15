@@ -45,3 +45,8 @@ html,body,#root { width:100%;height:100%;margin:0; }
 }
 .tv-home .hero-release-date {color:#fff!important;text-shadow:0 2px 8px rgba(0,0,0,.85);}
 .tv-home .hero-details {white-space:normal!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;}
+
+
+/* Separate release date from genres; WebView 83 does not support flex-gap. */
+.tv-home .hero-details {display:block!important;margin-bottom:3px!important;}
+.tv-home p.hero-release-date {display:block!important;margin:4px 0 15px!important;font-size:12px!important;line-height:1.35!important;}

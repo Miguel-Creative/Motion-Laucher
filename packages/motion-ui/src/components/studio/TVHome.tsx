@@ -60,9 +60,8 @@ export function TVHome() {
         <div className="hero-copy">
           <p className="hero-category"><Gamepad2 size={16}/>{wallpaper.kind} · Em destaque</p>
           <h1 key={wallpaper.id} className="hero-title tv-title-enter" title={wallpaper.title}>{wallpaper.title}</h1>
-          <p className="hero-details">{wallpaper.genres.slice(0, 2).join(" · ")}
-            <span className="hero-release-date">{formatReleaseDate(wallpaper)}</span>
-          </p>
+          {wallpaper.genres.length > 0 && <p className="hero-details">{wallpaper.genres.slice(0, 2).join(" · ")}</p>}
+          <p className="hero-release-date" aria-label="Data de lançamento">{formatReleaseDate(wallpaper)}</p>
           <Button data-nav data-nav-default asChild className="tv-personalize tv-focusable" size="lg">
             <Link to="/wallpapers"><SlidersHorizontal size={18}/>Personalizar tela</Link>
           </Button>
