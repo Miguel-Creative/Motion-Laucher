@@ -119,10 +119,24 @@ public class MainActivity extends Activity {
 
         @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest request) {
             Uri u = request.getUrl();
-            // Never intercept LIVE_HOST: stale bundled index.html was masking cloud updates.
-            // Embedded assets are served only for explicit offline fallback.
-            if (!OFFLINE_HOST.equals(u.getHost())) return null;
             String path = u.getPath();
+            if (LIVE_HOST.equalsIgnoreCase(u.getHost())) {
+                // WebView 83 cannot parse modern Tailwind @layer/oklch CSS. Serve only
+                // the compatible, packaged stylesheet. HTML, JS, data and API stay live.
+                if (path != null && path.startsWith("/assets/index-") && path.endsWith(".css")) {
+                    try {
+                        for (String file : getAssets().list("webroot/assets")) {
+                            if (file.startsWith("index-") && file.endsWith(".css")) {
+                                return new WebResourceResponse("text/css", "UTF-8",
+                                    getAssets().open("webroot/assets/" + file));
+                            }
+                        }
+                    } catch (Exception error) { Log.w("MotionUI", "Legacy CSS unavailable"); }
+                }
+                return null;
+            }
+            // Only the bundled fallback HTML/JS is used if there is no connection.
+            if (!OFFLINE_HOST.equalsIgnoreCase(u.getHost())) return null;
             if (path == null || path.equals("/")) path = "/index.html";
             if (path.contains("..") || path.indexOf('\\') >= 0) return null;
             try {
