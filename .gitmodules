@@ -25,3 +25,6 @@
 [submodule "upstream/research-tvtoolspro"]
 	path = upstream/research-tvtoolspro
 	url = https://github.com/deekshith0509/TvToolsPro.git
+[submodule "upstream/research-steamgriddb-client"]
+	path = upstream/research-steamgriddb-client
+	url = https://github.com/SteamGridDB/node-steamgriddb.git
