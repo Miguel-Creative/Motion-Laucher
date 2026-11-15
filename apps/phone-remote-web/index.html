@@ -1,0 +1,42 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>CreativeScreen Remote</title><style>
+:root{color-scheme:dark;--accent:#fa9c40;--surface:#181b24;--line:#363b48}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 70% -15%,#4b261b,#0a0b12 50%);font:500 16px system-ui;color:#fff;min-height:100dvh}
+main{max-width:480px;margin:auto;padding:22px 14px 32px}header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{font-size:22px;letter-spacing:.05em;margin:0;font-weight:850}h1 span{color:var(--accent)}
+small{font-size:11px;color:#9aa4b7}#status{font-size:12px;background:#143c2a;border-radius:30px;padding:8px;color:#a5e7b7}
+section{padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:18px;margin-top:14px}
+h2{margin:0 0 14px;font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:#cbd0d8}
+.row{display:flex;gap:8px}.row button{flex:1}button{background:#282d39;color:#fff;border:1px solid #434b57;border-radius:13px;min-height:48px;padding:11px;font-weight:650;cursor:pointer}
+button:active{background:#783f23}button:focus-visible{outline:2px solid var(--accent)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:288px;margin:14px auto}
+.pad button{height:72px;font-size:24px}.pad .ok{background:linear-gradient(130deg,#ffb24d,#ac5229);color:#140e08;font-size:16px}
+input{width:100%;border:1px solid #4c5363;border-radius:12px;padding:14px;background:#0c0e15;color:#fff;font-size:16px}
+.primary{color:var(--accent);border-color:#996338}.full{width:100%;margin-top:9px}
+#touch{height:170px;border:1px dashed #946035;border-radius:16px;background:radial-gradient(circle,#312319,#11141d 75%);display:grid;place-items:center;color:#cfaa88;user-select:none;touch-action:none}
+.hint{font-size:12px;color:#a5adbe;line-height:1.5;margin-top:9px}#toast{font-size:12px;min-height:18px;color:#fec38b;margin-top:12px}footer{font-size:11px;color:#7c8492;text-align:center;padding:20px}
+</style></head><body><main>
+<header><div><small>CONTROLE LOCAL • WI-FI / ADB</small><h1>CREATIVE<span>SCREEN</span></h1></div><div id="status">Conectando</div></header>
+<section><h2>Controle remoto</h2><div class="row"><button data-action="home">⌂ Início</button><button data-action="back">↶ Voltar</button><button data-action="menu">☷ Menu</button></div>
+<div class="pad"><div></div><button data-action="up">↑</button><div></div><button data-action="left">←</button><button class="ok" data-action="ok">OK</button><button data-action="right">→</button><div></div><button data-action="down">↓</button><div></div></div>
+<div class="row"><button data-action="volumeDown">− Vol</button><button data-action="mute">× Mudo</button><button data-action="volumeUp">+ Vol</button></div>
+<div class="row" style="margin-top:8px"><button data-action="playPause">⏯ Play/Pause</button><button data-action="settings">⚙ Ajustes</button></div></section>
+<section><h2>Teclado do celular</h2><form id="typing"><input id="message" maxlength="200" placeholder="Digite um texto ou pesquisa"><button class="primary full" type="submit">Enviar texto para a tela</button></form>
+<div class="hint">Primeira versão: texto sem acentos. Unicode completo será implementado com um método de entrada Android opcional.</div></section>
+<section><h2>Touchpad experimental</h2><div id="touch">Toque ou arraste aqui</div>
+<div class="hint">Simula toques e gestos via ADB. Cursor de mouse real será feito por HID Bluetooth ou receptor compatível.</div></section>
+<section><h2>Conexão</h2><div class="row"><button id="reconnect">⟳ Verificar conexão</button></div><div id="toast"></div></section>
+<footer>CreativeScreen Remote • Sem servidor exposto à rede • Sem agente no projetor</footer></main>
+<script>
+const toast=document.getElementById('toast');
+function note(s){toast.textContent=s;setTimeout(function(){if(toast.textContent===s)toast.textContent=''},4500)}
+async function post(path,data){const r=await fetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await r.json();if(!r.ok)throw Error(result.error||'Falha');return result}
+document.querySelectorAll('[data-action]').forEach(function(b){b.onclick=function(){post('command',{action:b.dataset.action}).then(function(){note('Comando enviado')}).catch(function(e){note(e.message)})}});
+document.getElementById('typing').onsubmit=function(e){e.preventDefault();const text=document.getElementById('message').value;if(text)post('type',{text:text}).then(function(){note('Texto enviado')}).catch(function(err){note(err.message)})};
+const touch=document.getElementById('touch');let start=null;
+touch.onpointerdown=function(e){e.preventDefault();start={x:e.clientX,y:e.clientY};touch.setPointerCapture(e.pointerId)};
+touch.onpointerup=function(e){if(!start)return;const box=touch.getBoundingClientRect();const dx=e.clientX-start.x,dy=e.clientY-start.y;const move=Math.hypot(dx,dy)>12;
+const data=move?{kind:'swipe',x:(start.x-box.left)/box.width,y:(start.y-box.top)/box.height,dx:dx/box.width,dy:dy/box.height}:{kind:'tap',x:(e.clientX-box.left)/box.width,y:(e.clientY-box.top)/box.height};
+start=null;post('gesture',data).catch(function(err){note(err.message)})};
+async function status(){try{const r=await fetch('/api/status');const d=await r.json();const e=document.getElementById('status');e.textContent=d.connected?'Conectado':'Offline';e.style.background=d.connected?'#143c2a':'#5b261e'}catch{document.getElementById('status').textContent='Erro'}}
+document.getElementById('reconnect').onclick=status;status();setInterval(status,15000);
+</script></body></html>
