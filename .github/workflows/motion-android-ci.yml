@@ -1,0 +1,51 @@
+name: Motion Launcher — APK verdadeiro (Android TV)
+on:
+  push:
+    paths:
+      - 'apps/motion-android/**'
+      - 'apps/tv-preview/**'
+      - 'packages/motion-ui/**'
+      - '.github/workflows/motion-android-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/motion-android/**'
+      - 'apps/tv-preview/**'
+      - 'packages/motion-ui/**'
+      - '.github/workflows/motion-android-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-real-motion-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck && npm test -- --run
+      - run: npm run build:tv
+      - run: node apps/motion-android/scripts/prepare-snapshot.cjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-34' 'build-tools;34.0.0'
+      - name: Montar APK de teste (debug, não assinado para produção)
+        working-directory: apps/motion-android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --console=plain :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: motion-launcher-real-android-tv-debug
+          path: apps/motion-android/app/build/outputs/apk/debug/*.apk
+          retention-days: 7

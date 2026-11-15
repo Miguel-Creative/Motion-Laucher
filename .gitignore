@@ -45,3 +45,6 @@ coverage/
 npm-debug.log*
 .DS_Store
 *.tsbuildinfo
+
+# Generated Android WebView bundle; regenerate with prepare-snapshot.cjs
+apps/motion-android/app/src/main/assets/webroot/

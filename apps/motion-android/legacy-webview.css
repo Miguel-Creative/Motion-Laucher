@@ -1,0 +1,29 @@
+/* HY300por Android 11 / Chromium WebView 83: safe visual fallbacks.
+   WebView 83 has no flex gap, CSS layers, color-mix(), or modern text-wrap.
+   Native project loads exact Motion UI; this only restores CSS presentation. */
+html,body,#root { width:100%;height:100%;margin:0; }
+.tv-home {position:relative!important;isolation:isolate;min-height:100vh;overflow:hidden;}
+.tv-home .tv-scene {position:absolute!important;z-index:0!important;inset:0!important;height:100%!important;width:100%!important;pointer-events:none;}
+.tv-home .tv-scene .smart-artwork {width:100%;height:100%;display:block;}
+.tv-home .tv-scene .smart-artwork-primary {width:100%;height:100%;object-fit:cover;opacity:1;}
+.tv-home .tv-scene .tv-local-scrim {z-index:2;}
+.tv-home .tv-scene .tv-bottom-fade {z-index:3;}
+.tv-home .tv-header,.tv-home main {position:relative;z-index:1;}
+.tv-home .hero-title {color:#fff!important;text-shadow:0 2px 18px rgba(0,0,0,.83)!important;}
+.tv-home .hero-copy {color:#fff!important;}
+.tv-header {height:90px;display:flex;align-items:center;justify-content:space-between;padding:18px 36px;}
+.tv-header nav {display:flex;align-items:center;white-space:nowrap;flex-wrap:nowrap;flex-shrink:0;margin:0 10px;padding:5px 9px;border-radius:12px;background:rgba(10,12,17,.75)!important;min-height:46px;}
+.tv-header nav > * {display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px;white-space:nowrap;color:#fff!important;text-decoration:none;padding:9px 13px!important;border-radius:8px;background:transparent;min-width:auto!important;}
+.tv-header nav > * + * {margin-left:11px!important;}
+.tv-header nav svg {flex:none;margin-right:7px;}
+.tv-header .font-display {color:#fff!important;}
+.tv-home .tv-header a {color:white!important;text-decoration:none!important;}
+.tv-home .tv-header nav [class*="bg-primary"] {background:rgba(255,161,36,.18)!important;color:#ffa527!important;}
+.hero-copy >div:first-child > span+span {margin-left:8px;}
+.hero-copy .flex.flex-wrap > *+* {margin-left:14px;}
+.tv-home .hero-copy button,.tv-home .hero-copy a {text-decoration:none!important;}
+.tv-home .hero-copy .hero-title {font-size:48px;line-height:1.12;}
+.hero-profile >* +* {margin-left:12px;}
+.tv-home .favorite-row > * + * {margin-left:12px;}
+.tv-home .quick-strip > * + * {margin-left:12px;}
+.tv-home .tv-local-scrim {background:linear-gradient(90deg,rgba(4,8,15,.88) 0%,rgba(4,8,15,.58) 35%,rgba(4,8,15,.13) 70%,transparent 100%)!important;}

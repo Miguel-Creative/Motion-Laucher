@@ -1,9 +1,5 @@
-name: Motion Laucher — Android Nativo CI
+name: Legacy TVLauncher archive (manual only, not Motion Launcher)
 on:
-  push:
-    paths: ['apps/projector-launcher/**', '.github/workflows/projector-ci.yml']
-  pull_request:
-    paths: ['apps/projector-launcher/**', '.github/workflows/projector-ci.yml']
   workflow_dispatch:
 permissions:
   contents: read

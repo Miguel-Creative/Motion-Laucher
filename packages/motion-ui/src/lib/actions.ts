@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import { getApp } from "@/data/apps";
+import { isNativeLauncher, launchNativeApp } from "@/lib/device/native-android";
 import { device } from "@/lib/device/simulated";
 import { CATALOG_SOURCES } from "@/lib/catalog/sources";
 import {
@@ -10,6 +11,10 @@ export const LAUNCH_EVENT = "ml-launch";
 
 /** Opens an app (simulated). The TV shows a launch transition; nothing real is started. */
 export function launchApp(appId: string) {
+  if (isNativeLauncher()) {
+    if (!launchNativeApp(appId)) toast.error("Este aplicativo não está instalado.");
+    return;
+  }
   pushRecent(appId);
   void device.launchApp(appId);
   window.dispatchEvent(new CustomEvent(LAUNCH_EVENT, { detail: appId }));

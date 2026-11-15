@@ -20,7 +20,7 @@ export interface LauncherApp {
 
 export const APPS: LauncherApp[] = [
   { id: "youtube", name: "YouTube", pkg: "com.google.android.youtube.tv", category: "Streaming", system: false, icon: Play, tone: 0, sizeMb: 92, version: "4.40.303" },
-  { id: "netflix", name: "Netflix", pkg: "com.netflix.ninja", category: "Streaming", system: false, icon: Clapperboard, tone: 0, sizeMb: 118, version: "11.2.1" },
+  { id: "netflix", name: "Netflix", pkg: "com.netflix.mediaclient", category: "Streaming", system: false, icon: Clapperboard, tone: 0, sizeMb: 118, version: "11.2.1" },
   { id: "primevideo", name: "Prime Video", pkg: "com.amazon.amazonvideo.livingroom", category: "Streaming", system: false, icon: Film, tone: 4, sizeMb: 104, version: "6.9.2" },
   { id: "disney", name: "Disney+", pkg: "com.disney.disneyplus", category: "Streaming", system: false, icon: Tv, tone: 3, sizeMb: 96, version: "3.1.0" },
   { id: "globoplay", name: "Globoplay", pkg: "com.globo.globotv", category: "Streaming", system: false, icon: MonitorPlay, tone: 1, sizeMb: 74, version: "5.12" },
