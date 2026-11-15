@@ -118,8 +118,9 @@ export const SETTINGS_SECTIONS: SettingSection[] = [
   },
   {
     id: "display", label: "Tela e Projeção", icon: Projector, preview: "projector",
-    description: "Preset Projetor: brilho, gama, contraste e detalhe de sombras aplicados às imagens.",
+    description: "Correção física da projeção (Zoom, posição e Keystone) e ajustes visuais dos wallpapers.",
     items: [
+      { id: "display.keystone", label: "Correção da tela: Zoom e Keystone", description: "Abre os ajustes originais do HY300por para corrigir tamanho, orientação e os quatro cantos da projeção. Não é o aplicativo Kodi.", type: "action", action: "open-projector-settings", actionLabel: "Corrigir projeção" },
       { id: "projector.enabled", label: "Preset Projetor", description: "Aplica correção de imagem às artes. É processamento no app: não aumenta os lúmens reais do aparelho.", type: "toggle", default: true },
       { id: "projector.brightness", label: "Brilho da arte", description: "Clareia as imagens de fundo e cartões.", type: "slider", default: 112, min: 50, max: 180, step: 1, unit: "%" },
       { id: "projector.gamma", label: "Gama", description: "Valores acima de 1 clareiam os tons médios sem estourar os claros.", type: "slider", default: 1.2, min: 0.6, max: 2.2, step: 0.05 },
@@ -131,7 +132,6 @@ export const SETTINGS_SECTIONS: SettingSection[] = [
       { id: "projector.blur", label: "Desfoque do fundo", description: "Desfoque aplicado à arte de fundo (0 = nítido).", type: "slider", default: 0, min: 0, max: 20, step: 1, unit: " px" },
       { id: "display.resolution", label: "Resolução de saída", description: "Lida pelo sistema Android. Alterar exige a ponte nativa.", type: "segmented", default: "720p", options: o(["720p", "1280×720"], ["1080p", "1920×1080"], ["4k", "3840×2160"]), availability: "ponte" },
       { id: "display.overscan", label: "Margem de segurança (overscan)", description: "Afasta a interface das bordas da projeção.", type: "slider", default: 0, min: 0, max: 8, step: 1, unit: "%" },
-      { id: "display.keystone", label: "Zoom, orientação e Keystone", description: "Na APK do HY300por, abre a tela original de zoom, orientação e correção de quatro cantos do projetor. No navegador não é possível alterar hardware.", type: "action", action: "open-projector-settings", actionLabel: "Abrir ajustes do projetor" },
       { id: "display.hardwareBrightness", label: "Brilho do projetor (hardware)", description: "Intensidade real da lâmpada/LED. Só pela ponte e se o firmware expuser a função.", type: "slider", default: 80, min: 0, max: 100, step: 1, unit: "%", availability: "ponte" },
     ],
   },

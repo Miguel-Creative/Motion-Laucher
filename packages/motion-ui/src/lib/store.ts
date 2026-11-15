@@ -85,7 +85,7 @@ export const DEFAULT_MACROS: Macro[] = [
 export const DEFAULT_STATE: PersistedState = {
   v: 1,
   settings: {},
-  pinned: ["youtube", "netflix", "retroarch", "spotify", "kodi", "steamlink"],
+  pinned: ["youtube", "netflix", "retroarch", "spotify", "steamlink"],
   hidden: [],
   order: [],
   recents: ["youtube", "retroarch", "kodi", "vlc"],

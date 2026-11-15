@@ -25,7 +25,7 @@ export function TVHome() {
   const now = useNow(30_000);
   const apps = availableLauncherApps();
   const native = isNativeLauncher();
-  const pinnedApps = pinned.map(id => apps.find(app => app.id === id)).filter((app): app is (typeof apps)[number] => Boolean(app));
+  const pinnedApps = pinned.map(id => apps.find(app => app.id === id)).filter((app): app is (typeof apps)[number] => Boolean(app) && app?.pkg !== "org.xbmc.kodi");
   const favorites = native && pinnedApps.length === 0 ? apps.slice(0, 5) : pinnedApps;
 
   useSpatialNav(() => toast.info("Você está no início."));

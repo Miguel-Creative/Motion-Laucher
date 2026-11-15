@@ -23,7 +23,7 @@ export function availableLauncherApps(): LauncherApp[] {
   if (cachedNativeApps) return cachedNativeApps;
   try {
     const parsed: NativeEntry[] = JSON.parse(window.MotionNative!.getInstalledApps());
-    const resolved = parsed.filter(item => item.pkg && item.name).map((item, i) => {
+    const resolved = parsed.filter(item => item.pkg && item.name && item.pkg !== "com.htc.htcsettings").map((item, i) => {
       const known = APPS.find(a => a.pkg === item.pkg);
       return known ? { ...known, name: item.name, nativeIcon: item.icon } : {
         id: "native:" + item.pkg,
