@@ -1,7 +1,7 @@
 
 /** Motion Laucher: catálogo vivo via Cloudflare, sem expor secrets no navegador. */
 type Kind="Filmes"|"Séries"|"Jogos"|"Anime";
-type Env={ ASSETS:{fetch(request:Request):Promise<Response>},TMDB_READ_TOKEN?:string,RAWG_API_KEY?:string};
+type Env={ ASSETS:{fetch(request:Request):Promise<Response>},TMDB_READ_TOKEN?:string,RAWG_API_KEY?:string,STEAMGRIDDB_API_KEY?:string};
 type Context={waitUntil(promise:Promise<unknown>):void};
 
 /** Editorial feeds: mixed by default, always date-relative rather than static title IDs. */
@@ -63,12 +63,29 @@ async function tmdb(kind:Kind,token:string|undefined,feed:Feed){
  const top=()=>json(base+"discover/"+media+"?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=100&"+
   (kind==="Filmes"?"primary_release_date.gte=":"first_air_date.gte=")+shift(-36)+"&page=1",{headers})
   .then(d=>tmdbMap((d.results||[]).filter((x:any)=>(Number(x.vote_average)||0)>=7),kind,"Mais bem avaliados"));
+
  const onAir=()=>json(base+"tv/on_the_air"+lang,{headers}).then(d=>tmdbMap(d.results||[],kind,"Em exibição"));
+ const returning=async()=>{
+  const onAirTitles=await onAir();
+  // Check actual episode/season metadata. Old series still streaming are not automatically "new seasons".
+  const result=await Promise.allSettled(onAirTitles.slice(0,12).map(async(t:any)=>{
+   const id=String(t.id).replace(/^tmdb-tv-/,"");
+   const d=await json(base+"tv/"+id+"?language=pt-BR",{headers});
+   const now=Date.now();
+   const relevant=[d.next_episode_to_air,d.last_episode_to_air].some(ep=>{
+    if(!ep||Number(ep.season_number)<2)return false;
+    const date=Date.parse(String(ep.air_date||""));
+    return Number.isFinite(date)&&date>=now-1000*60*60*24*120&&date<=now+1000*60*60*24*90;
+   });
+   return relevant?{...t,subtitle:"Nova temporada em exibição · TMDB"}:null;
+  }));
+  return result.flatMap(r=>r.status==="fulfilled"&&r.value?[r.value]:[]);
+ };
  if(feed==="em-alta")return trending();
  if(feed==="em-breve")return upcoming();
  if(feed==="melhores")return top();
  // The on-the-air list includes continuations but not every show is a newly announced season.
- if(feed==="novas-temporadas"&&kind==="Séries")return onAir();
+ if(feed==="novas-temporadas"&&kind==="Séries")return returning();
  if(feed==="novas-temporadas")return [];
  const tasks=kind==="Séries"?[trending(),upcoming(),top(),onAir()]:[trending(),upcoming(),top()];
  const results=await Promise.allSettled(tasks);
@@ -124,12 +141,35 @@ async function rawg(key:string|undefined,feed:Feed){
  if(!lists.some(x=>x.length))throw Error("RAWG indisponível");
  return mix([lists[3],lists[4],lists[0],lists[1],lists[2]],[2,2,9,8,7],27);
 }
-async function rawgImages(id:string,key?:string){
+
+async function steamGridHeroes(gameName:string,token:string|undefined){
+ if(!token||!gameName)return [];
+ const headers={Authorization:"Bearer "+token,Accept:"application/json"};
+ const base="https://www.steamgriddb.com/api/v2/";
+ const clean=(v:string)=>v.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();
+ const search=await json(base+"search/autocomplete/"+encodeURIComponent(gameName),{headers});
+ const found=(search.data||[]).find((x:any)=>clean(String(x.name||""))===clean(gameName));
+ if(!found||!Number.isInteger(Number(found.id)))return [];
+ const heroes=await json(base+"heroes/game/"+found.id+"?types=static",{headers});
+ return (Array.isArray(heroes.data)?heroes.data:[])
+  .filter((v:any)=>typeof v.url==="string"&&v.url.startsWith("https://") &&
+    (!v.width||!v.height||Number(v.width)/Number(v.height)>=1.5))
+  .sort((a:any,b:any)=>(Number(b.score)||0)-(Number(a.score)||0))
+  .slice(0,6).map((v:any,i:number)=>({
+    src:v.url,label:"Arte panorâmica SteamGridDB "+(i+1)+(v.author?.name?" · "+v.author.name:"")
+  }));
+}
+async function rawgImages(id:string,key?:string,steamKey?:string){
  if(!key)throw new Error("RAWG_API_KEY não configurada");
  const m=/^rawg-(\d{1,9})$/.exec(id);if(!m)throw new Error("Jogo inválido");
- const data=await json("https://api.rawg.io/api/games/"+m[1]+"/screenshots?key="+encodeURIComponent(key)+"&page_size=12");
- return (data.results||[]).filter((v:any)=>typeof v.image==="string"&&v.image.startsWith("https://"))
-  .slice(0,12).map((v:any,i:number)=>({src:v.image,label:"Captura "+(i+1)}));
+ const base="https://api.rawg.io/api/games/"+m[1]+"?key="+encodeURIComponent(key);
+ const screenshots=json("https://api.rawg.io/api/games/"+m[1]+"/screenshots?key="+encodeURIComponent(key)+"&page_size=12")
+  .then(data=>(data.results||[]).filter((v:any)=>typeof v.image==="string"&&v.image.startsWith("https://"))
+   .slice(0,10).map((v:any,i:number)=>({src:v.image,label:"Captura oficial "+(i+1)})));
+ const heroes=steamKey?json(base).then(d=>steamGridHeroes(String(d.name||""),steamKey)).catch(()=>[]):Promise.resolve([]);
+ const parts=await Promise.allSettled([heroes,screenshots]);
+ const group=parts.map((p:any)=>p.status==="fulfilled"?p.value:[]);
+ return [...group[0],...group[1]].slice(0,16);
 }
 
 /** Public Kitsu anime catalogue, fallback if AniList rejects Cloudflare egress. */
@@ -202,7 +242,7 @@ async function catalog(request:Request,env:Env,ctx:Context){
  const edge=(caches as CacheStorage & {default:Cache}).default;
  try{const cached=await edge.match(request);if(cached)return cached;}catch{}
  try{
-  const variants=imageId?(kind==="Filmes"||kind==="Séries"?await tmdbImages(kind,imageId,env.TMDB_READ_TOKEN):kind==="Jogos"?await rawgImages(imageId,env.RAWG_API_KEY):[]):undefined;
+  const variants=imageId?(kind==="Filmes"||kind==="Séries"?await tmdbImages(kind,imageId,env.TMDB_READ_TOKEN):kind==="Jogos"?await rawgImages(imageId,env.RAWG_API_KEY,env.STEAMGRIDDB_API_KEY):[]):undefined;
   const items=imageId?undefined:(kind==="Filmes"||kind==="Séries"?await tmdb(kind,env.TMDB_READ_TOKEN,feed):kind==="Jogos"?await rawg(env.RAWG_API_KEY,feed):await kitsu(feed).catch(()=>anime()));
   const source=kind==="Filmes"||kind==="Séries"?"TMDB":kind==="Jogos"?"RAWG":items?.[0]?.provider==="kitsu"?"Kitsu":"AniList";
   const result=response(imageId?{kind,source,id:imageId,variants}:{kind,source,items,feed,updatedAt:new Date().toISOString()},200,true);
