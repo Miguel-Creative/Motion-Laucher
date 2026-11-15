@@ -46,7 +46,7 @@ jobs:
       - name: Verify Cloudflare Worker static assets and SPA routing
         run: |
           test -f dist/tv-preview/index.html
-          node -e 'const c=require("./wrangler.jsonc"); if(c.assets.directory!=="./dist/tv-preview"||c.assets.not_found_handling!=="single-page-application")process.exit(1)'
+          node -e 'const fs=require("node:fs");const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));if(c.assets.directory!=="./dist/tv-preview"||c.assets.not_found_handling!=="single-page-application")process.exit(1)'
       - name: Build standalone MRL PWA
         run: pnpm run build:mrl
       - uses: actions/upload-artifact@v4
