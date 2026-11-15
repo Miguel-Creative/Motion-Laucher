@@ -12,7 +12,7 @@
 
 ## Estado atual
 - Repositórios de referência registrados como **submódulos Git**, com commits fixados e licença documentada.
-- Código testado do launcher HY300por anterior preservado para migração em `archives/legacy-launcher-source.tar.gz` (quando presente). Rode `bash scripts/materialize-launcher.sh` para disponibilizar código em `apps/projector-launcher`. O projeto **não** está pronto como release integrado; os submódulos não são automaticamente compilados no APK.
+- Código completo do launcher HY300por migrado para `apps/projector-launcher/`, e APK independente compilado com sucesso. Backup de código em `archives/legacy-launcher-source.tar.gz`. Os submódulos externos ainda não estão integrados em um único APK.
 - Recursos administrativos do TvToolsPro estão especificados para implementação, mas o projeto original não informa licença de reutilização; seu código permanece uma **referência externa não incorporada ao produto** até obtermos permissão/licença.
 - Sem acesso root, sem remoções irreversíveis e sem serviços pesados rodando no projetor.
 
@@ -20,10 +20,13 @@
 ```bash
 git clone --recurse-submodules https://github.com/Miguel-Creative/CreativeScreen-OS.git
 cd CreativeScreen-OS
-bash scripts/materialize-launcher.sh
+cd apps/projector-launcher && ./gradlew assembleFdroidRelease
 ```
 
 Veja [Arquitetura](docs/ARCHITECTURE.md), [Plano de integração](docs/INTEGRATION_PLAN.md), [Fontes e licenças](docs/UPSTREAMS_AND_LICENSES.md), [Brief para Lovable](design/LOVABLE_BRIEF.md) e [Orçamento de desempenho](docs/PERFORMANCE.md).
 
 ## Licenciamento e atribuições
 Licença geral GPL-3.0, respeitando arquivos LICENSE/NOTICE de cada fonte. Projetos MIT podem servir de base; qualquer código com licença não identificada fica excluído dos binários até esclarecimento. Wallpapers, logos e pôsteres de franquias pertencem aos respectivos titulares; não incluímos acervos sem direitos definidos.
+
+## Controle do celular
+O MVP `apps/phone-remote-web/` utiliza Node.js no Termux do próprio celular e comandos ADB autorizados por Wi-Fi. Não é o aplicativo Android nativo definitivo.

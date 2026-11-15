@@ -12,8 +12,8 @@ android {
         applicationId "pro.creativezone.hy300launcher"
         minSdk 21
         targetSdk 34
-        versionCode 10603
-        versionName "1.6.2-linkou.1"
+        versionCode 10604
+        versionName "1.7.0-creativescreen.0"
     }
 
     flavorDimensions "store"

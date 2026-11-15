@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Linkou Home HY300</string>
+    <string name="app_name">CreativeScreen OS</string>
     <string name="select_apps">Select Apps</string>
     <string name="select_apps_max">Select apps (max %1$d)</string>
     <string name="selected_badge">%1$d / %2$d</string>
@@ -14,7 +14,7 @@
     <string name="about_title">Settings &amp; About</string>
     <string name="about_open_github">Open GitHub</string>
     <string name="about_close">Close</string>
-    <string name="about_message">Linkou Home HY300\nDerived from TV Launcher\nVersion %1$s\n\nFree and open source.\nLicense: GNU GPL v3.0.\n\n%2$s</string>
+    <string name="about_message">CreativeScreen OS\nBased on TV Launcher\nVersion %1$s\n\nFree and open source.\nLicense: GNU GPL v3.0.\n\n%2$s</string>
     <string name="github_repo_url">https://github.com/wiiguy/lightweight_androidtv_launcher</string>
     <string name="add_app">Add App</string>
     <string name="slot_limit_reached">Home screen is full (max %1$d apps).</string>

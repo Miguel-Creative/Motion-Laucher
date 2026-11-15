@@ -1,0 +1,40 @@
+name: CreativeScreen Launcher CI
+on:
+  push:
+    paths: ['apps/projector-launcher/**', '.github/workflows/projector-ci.yml']
+  pull_request:
+    paths: ['apps/projector-launcher/**', '.github/workflows/projector-ci.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: SDK
+        run: sdkmanager --install 'platforms;android-34' 'build-tools;34.0.0'
+      - name: Temporary CI signing (not production)
+        run: |
+          keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/ci.jks" -storepass android -keypass android -alias creativescreen-ci -keyalg RSA -keysize 2048 -validity 30 -dname 'CN=CreativeScreen CI,O=CreativeScreen,C=BR'
+      - name: Build
+        working-directory: apps/projector-launcher
+        env:
+          SIGNING_STORE_PASSWORD: android
+          SIGNING_KEY_PASSWORD: android
+          SIGNING_KEY_ALIAS: creativescreen-ci
+        run: |
+          export SIGNING_STORE_FILE="$RUNNER_TEMP/ci.jks"
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --console=plain :app:assembleFdroidRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: creativescreen-launcher-ci-not-production-signed
+          path: apps/projector-launcher/app/build/outputs/apk/fdroid/release/*.apk
+          retention-days: 7
