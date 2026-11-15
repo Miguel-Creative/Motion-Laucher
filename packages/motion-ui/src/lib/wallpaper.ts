@@ -53,6 +53,11 @@ export function stepWallpaper(dir: 1 | -1, order?: "random" | "sequential") {
     next = pool[(idx + dir + pool.length) % pool.length];
   }
   if (!next) return;
-  setState({ currentWallpaper: next.id });
+  // Rotate different *horizontal* artwork variants of the same anime/game on revisits.
+  // Each source variant is vetted by the provider for the cinematic gallery.
+  const variants=next.variants.length;
+  const prior=s.wallpaperAlt[next.id] ?? 0;
+  const alternate=variants>1 ? (prior+1+Math.floor(Math.random()*(variants-1)))%variants : 0;
+  setState({ currentWallpaper: next.id, wallpaperAlt: { ...s.wallpaperAlt, [next.id]: alternate } });
   return next;
 }

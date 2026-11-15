@@ -1,3 +1,13 @@
+## Curadoria internacional e backdrops para TV (2026)
+
+- Filmes e séries: seleção com prioridade aos serviços disponíveis na região BR, mantendo produções internacionais.
+- O filtro deste projetor exclui produções brasileiras, chinesas e tailandesas, inclusive originais nessas línguas, mas mantém conteúdo japonês e coreano.
+- Anime: destaques One Piece, Solo Leveling, Jujutsu Kaisen, Demon Slayer, Dragon Ball Super/Z, Chainsaw Man, Bleach e Naruto a partir do TMDB e animes populares no BR.
+- Até doze imagens horizontais alternativas por destaque, escolhidas por proporção e resolução. A seleção pode mudar na rotação automática.
+- O TMDB serve imagens oficiais remotamente. Nenhuma arte de terceiros é copiada ou republicada em GitHub/Cloudflare.
+- A curadoria prioriza imagens horizontais; Kitsu/AniList ficam como fontes alternativas quando faltam backdrops.
+- Os números dependem da disponibilidade atual das APIs e de seus termos. A fonte segue visível no estúdio, mas foi retirada da Home.
+
 # Motion Laucher — seleção dinâmica de wallpapers reais
 
 O launcher busca títulos, notas, datas de estreia e imagens nos serviços de origem. A versão web utiliza **Cloudflare Workers**, com endpoint `/api/catalog`, e não precisa de VPS. O frontend permite escolher o critério editorial em **Estúdio de Wallpapers**.

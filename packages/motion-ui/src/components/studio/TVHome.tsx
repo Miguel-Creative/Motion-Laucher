@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Plus, Gamepad2, SlidersHorizontal } from "lucide-react";
+import { Plus, Gamepad2, SlidersHorizontal, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Brand, Navigation } from "./Shell";
 import { Artwork } from "./Artwork";
 import { APP_TONES } from "@/data/apps";
 import { availableLauncherApps, isNativeLauncher } from "@/lib/device/native-android";
-import { useAllWallpapers, useCurrentWallpaper, stepWallpaper } from "@/lib/wallpaper";
+import { useCurrentWallpaper } from "@/lib/wallpaper";
 import { useAppState } from "@/lib/store";
 import { launchApp } from "@/lib/actions";
 import { onBridge } from "@/lib/device/bridge-channel";
@@ -20,7 +20,6 @@ import { useSpatialNav } from "@/hooks/use-spatial-nav";
  */
 export function TVHome() {
   const { wallpaper } = useCurrentWallpaper();
-  const wallpapers = useAllWallpapers();
   const pinned = useAppState(s => s.pinned);
   const now = useNow(30_000);
   const apps = availableLauncherApps();
@@ -58,19 +57,12 @@ export function TVHome() {
     <main className="tv-main">
       <section className="tv-hero">
         <div className="hero-copy">
-          <div className="hero-meta"><span className="demo-pill">{wallpaper.provider === "demo" ? "Demonstração" : wallpaper.provider.toUpperCase()}</span><span>SEU UNIVERSO. SEU MOVIMENTO.</span></div>
           <p className="hero-category"><Gamepad2 size={16}/>{wallpaper.kind} · Em destaque</p>
           <h1 key={wallpaper.id} className="hero-title tv-title-enter" title={wallpaper.title}>{wallpaper.title}</h1>
           <p className="hero-details">{wallpaper.genres.slice(0, 3).join(" · ")} <span>{wallpaper.year}</span></p>
           <Button data-nav data-nav-default asChild className="tv-personalize tv-focusable" size="lg">
             <Link to="/wallpapers"><SlidersHorizontal size={18}/>Personalizar tela</Link>
           </Button>
-          <div className="tv-wallpaper-pager">
-            <Button data-nav variant="ghost" size="icon" aria-label="Wallpaper anterior" onClick={() => stepWallpaper(-1, "sequential")}><ChevronLeft /></Button>
-            <span>{Math.max(1, wallpapers.findIndex(w => w.id === wallpaper.id) + 1)} / {wallpapers.length}</span>
-            <Button data-nav variant="ghost" size="icon" aria-label="Próximo wallpaper" onClick={() => stepWallpaper(1, "sequential")}><ChevronRight /></Button>
-            <span className="tv-wallpaper-progress"/>
-          </div>
         </div>
       </section>
 

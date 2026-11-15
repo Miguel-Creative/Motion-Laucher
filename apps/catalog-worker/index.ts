@@ -32,6 +32,21 @@ function settled<T>(values:PromiseSettledResult<T>[],index:number,fallback:T):T{
 
 const sources:Record<string,Kind>={filmes:"Filmes",series:"Séries",séries:"Séries",jogos:"Jogos",animes:"Anime",anime:"Anime"};
 const img=(p:any,size="w1280")=>typeof p==="string"&&/^\/[a-zA-Z0-9/_\-.]+$/.test(p)?"https://image.tmdb.org/t/p/"+size+p:null;
+/** International productions that have relevant audiences in Brazil; not Brazilian, Mandarin or Thai originals.
+ * This is a user preference, not a claim that other productions are inferior.
+ */
+export function isInternationalForBR(v:any):boolean {
+ const country=Array.isArray(v?.origin_country)?v.origin_country.map((x:unknown)=>String(x).toUpperCase()):[];
+ const lang=String(v?.original_language||"").toLowerCase();
+ return !["pt","zh","th"].includes(lang) && !country.some((c:string)=>["BR","CN","TW","HK","TH"].includes(c)) &&
+   v?.adult!==true && !!(v?.backdrop_path);
+}
+const landscapeImage=(v:any)=>Number(v?.aspect_ratio)>=1.62 && Number(v?.aspect_ratio)<=2.20 &&
+  Number(v?.width)>=1000 && typeof v?.file_path==="string";
+/** Prefer text-free artwork to avoid giant series titles baked into a backdrop. */
+const imageScore=(v:any)=>Number(v?.vote_average||0)*3+Math.min(Number(v?.vote_count||0),25)/3+
+ (v?.iso_639_1==null?12:0)+Math.min(Number(v?.width||0),3000)/2000;
+
 const response=(data:unknown,status=200,cache=false)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","X-Content-Type-Options":"nosniff","Cache-Control":cache?"public,max-age=300,s-maxage=21600":"no-store"}});
 async function json(url:string,init:RequestInit={}):Promise<any>{
  const r=await fetch(url,{...init,signal:AbortSignal.timeout(10000)});
@@ -42,13 +57,13 @@ async function json(url:string,init:RequestInit={}):Promise<any>{
 function tmdbMap(list:any[],kind:Kind,category:string) {
  const media=kind==="Filmes"?"movie":"tv";
  return list.flatMap((v:any)=>{
-  const wide=img(v.backdrop_path),poster=img(v.poster_path,"w780");
-  if(!wide||!v.id)return [];
+  const wide=img(v.backdrop_path);
+  if(!wide||!v.id||!isInternationalForBR(v))return [];
   const year=Number(String(v.release_date||v.first_air_date||"").slice(0,4))||0;
   return [{id:"tmdb-"+media+"-"+v.id,kind,title:String(v.title||v.name||""),
    subtitle:category+" · TMDB",genres:[],platforms:[],year,provider:"tmdb",
    sourceUrl:"https://www.themoviedb.org/"+media+"/"+v.id,popularity:Number(v.popularity)||0,
-   variants:[{src:wide,label:"Imagem panorâmica oficial"},...(poster?[{src:poster,label:"Pôster oficial",focal:"50% 25%"}]:[])]}];
+   variants:[{src:wide,label:"Imagem horizontal oficial · TMDB"}]}];
  });
 }
 async function tmdb(kind:Kind,token:string|undefined,feed:Feed){
@@ -57,50 +72,61 @@ async function tmdb(kind:Kind,token:string|undefined,feed:Feed){
  const base="https://api.themoviedb.org/3/";
  const lang="?language=pt-BR&page=1";
  const headers={"Authorization":"Bearer "+token};
- const trending=()=>json(base+"trending/"+media+"/week"+lang,{headers}).then(d=>tmdbMap(d.results||[],kind,"Em alta"));
- const upcoming=()=>json(base+(kind==="Filmes"?"movie/upcoming":"discover/tv")+(kind==="Filmes"?lang+"&region=BR":
-  "?language=pt-BR&sort_by=popularity.desc&first_air_date.gte="+iso(new Date())+"&first_air_date.lte="+shift(12)),{headers}).then(d=>tmdbMap(d.results||[],kind,"Próximo lançamento"));
- const top=()=>json(base+"discover/"+media+"?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=100&"+
-  (kind==="Filmes"?"primary_release_date.gte=":"first_air_date.gte=")+shift(-36)+"&page=1",{headers})
-  .then(d=>tmdbMap((d.results||[]).filter((x:any)=>(Number(x.vote_average)||0)>=7),kind,"Mais bem avaliados"));
-
- const onAir=()=>json(base+"tv/on_the_air"+lang,{headers}).then(d=>tmdbMap(d.results||[],kind,"Em exibição"));
+ const query=(endpoint:string)=>json(base+endpoint,{headers});
+ const trending=async()=>{const r=await Promise.allSettled([1,2].map(page=>
+    query("trending/"+media+"/week?language=pt-BR&page="+page)));
+   return r.flatMap(x=>x.status==="fulfilled"?tmdbMap(x.value.results||[],kind,"Em alta internacional"):[]);
+ };
+ // "watch_region=BR" only selects content with availability indexed for Brazil.
+ // It does NOT force a Brazilian original-language or Brazilian production.
+ const brasil=async()=>{const r=await Promise.allSettled([1,2].map(page=>
+  query("discover/"+media+"?language=pt-BR&watch_region=BR&with_watch_monetization_types=flatrate%7Cfree%7Cads&sort_by=popularity.desc&vote_count.gte=30&page="+page)));
+  return r.flatMap(x=>x.status==="fulfilled"?tmdbMap(x.value.results||[],kind,"Popular no Brasil"):[]);
+ };
+ const upcoming=()=>query(kind==="Filmes"?
+  "movie/upcoming?language=pt-BR&region=BR&page=1":
+  "discover/tv?language=pt-BR&sort_by=popularity.desc&first_air_date.gte="+iso(new Date())+"&first_air_date.lte="+shift(12)+"&page=1")
+  .then(d=>tmdbMap(d.results||[],kind,"Estreias internacionais"));
+ const top=async()=>{
+  const results=await Promise.allSettled([1,2].map(page=>query(
+   "discover/"+media+"?language=pt-BR&sort_by=vote_average.desc&vote_count.gte=180&"+
+   (kind==="Filmes"?"primary_release_date.gte=":"first_air_date.gte=")+shift(-48)+"&page="+page)));
+  return results.flatMap(x=>x.status==="fulfilled"?tmdbMap((x.value.results||[]).filter((v:any)=>Number(v.vote_average)>=7),kind,"Mais bem avaliados"):[]);
+ };
+ const onAir=()=>query("tv/on_the_air"+lang).then(d=>tmdbMap(d.results||[],kind,"Em exibição"));
  const returning=async()=>{
-  const onAirTitles=await onAir();
-  // Check actual episode/season metadata. Old series still streaming are not automatically "new seasons".
-  const result=await Promise.allSettled(onAirTitles.slice(0,12).map(async(t:any)=>{
+  const titles=await onAir();
+  const r=await Promise.allSettled(titles.slice(0,15).map(async(t:any)=>{
    const id=String(t.id).replace(/^tmdb-tv-/,"");
-   const d=await json(base+"tv/"+id+"?language=pt-BR",{headers});
+   const d=await query("tv/"+id+"?language=pt-BR");
    const now=Date.now();
-   const relevant=[d.next_episode_to_air,d.last_episode_to_air].some(ep=>{
+   const isNew=[d.next_episode_to_air,d.last_episode_to_air].some(ep=>{
     if(!ep||Number(ep.season_number)<2)return false;
     const date=Date.parse(String(ep.air_date||""));
     return Number.isFinite(date)&&date>=now-1000*60*60*24*120&&date<=now+1000*60*60*24*90;
    });
-   return relevant?{...t,subtitle:"Nova temporada em exibição · TMDB"}:null;
+   return isNew?{...t,subtitle:"Nova temporada em exibição · TMDB"}:null;
   }));
-  return result.flatMap(r=>r.status==="fulfilled"&&r.value?[r.value]:[]);
+  return r.flatMap(x=>x.status==="fulfilled"&&x.value?[x.value]:[]);
  };
- if(feed==="em-alta")return trending();
+ if(feed==="em-alta"){const r=await Promise.allSettled([brasil(),trending()]);return mix(r.map(x=>x.status==="fulfilled"?x.value:[]),[28,18],55);}
  if(feed==="em-breve")return upcoming();
  if(feed==="melhores")return top();
- // The on-the-air list includes continuations but not every show is a newly announced season.
- if(feed==="novas-temporadas"&&kind==="Séries")return returning();
- if(feed==="novas-temporadas")return [];
- const tasks=kind==="Séries"?[trending(),upcoming(),top(),onAir()]:[trending(),upcoming(),top()];
- const results=await Promise.allSettled(tasks);
- const lists=results.map((r:any)=>r.status==="fulfilled"?r.value:[]);
+ if(feed==="novas-temporadas")return kind==="Séries"?returning():[];
+ const jobs=kind==="Séries"?[brasil(),trending(),upcoming(),top(),onAir()]:[brasil(),trending(),upcoming(),top()];
+ const results=await Promise.allSettled(jobs);
+ const lists=results.map(x=>x.status==="fulfilled"?x.value:[]);
  if(!lists.some(x=>x.length))throw Error("TMDB indisponível");
- return mix(lists,kind==="Séries"?[8,7,7,4]:[9,9,8],26);
+ return mix(lists,kind==="Séries"?[25,18,8,10,8]:[26,18,10,12],72);
 }
 async function tmdbImages(kind:Kind,id:string,token?:string){
  if(!token)throw new Error("TMDB_READ_TOKEN não configurado");
  const m=/^tmdb-(movie|tv)-(\d{1,9})$/.exec(id);
  if(!m||(m[1]==="movie")!==(kind==="Filmes"))throw new Error("Título inválido");
  const data=await json("https://api.themoviedb.org/3/"+m[1]+"/"+m[2]+"/images?include_image_language=pt,en,null",{headers:{"Authorization":"Bearer "+token}});
- const backs=(data.backdrops||[]).filter((x:any)=>Number(x.aspect_ratio)>1.3).slice(0,12).map((x:any,i:number)=>({src:img(x.file_path),label:"Cena "+(i+1)}));
- const posters=(data.posters||[]).slice(0,4).map((x:any,i:number)=>({src:img(x.file_path,"w780"),label:"Pôster "+(i+1),focal:"50% 25%"}));
- return [...backs,...posters].filter(x=>x.src);
+ const backs=(data.backdrops||[]).filter(landscapeImage).sort((a:any,b:any)=>imageScore(b)-imageScore(a))
+  .slice(0,18).map((x:any,i:number)=>({src:img(x.file_path),label:"Arte panorâmica "+(i+1)}));
+ return backs.filter((x:any)=>x.src);
 }
 
 function rawgMap(list:any[],tag:string){
@@ -116,7 +142,7 @@ function rawgMap(list:any[],tag:string){
 }
 async function rawg(key:string|undefined,feed:Feed){
  if(!key)throw Error("RAWG_API_KEY não configurada");
- const base="https://api.rawg.io/api/games?key="+encodeURIComponent(key)+"&page_size=20";
+ const base="https://api.rawg.io/api/games?key="+encodeURIComponent(key)+"&page_size=40";
  const upcoming=()=>json(base+"&dates="+iso(new Date())+","+shift(18)+"&ordering=-added")
   .then(d=>rawgMap(d.results||[],"Mais aguardados").filter(x=>x.year>=yearNow()));
  const recent=()=>json(base+"&dates="+shift(-15)+","+iso(new Date())+"&ordering=-added")
@@ -139,7 +165,7 @@ async function rawg(key:string|undefined,feed:Feed){
  ]);
  const lists=results.map((r:any)=>r.status==="fulfilled"?r.value:[]);
  if(!lists.some(x=>x.length))throw Error("RAWG indisponível");
- return mix([lists[3],lists[4],lists[0],lists[1],lists[2]],[2,2,9,8,7],27);
+ return mix([lists[3],lists[4],lists[0],lists[1],lists[2]],[2,2,18,17,15],60);
 }
 
 async function steamGridHeroes(gameName:string,token:string|undefined){
@@ -172,6 +198,51 @@ async function rawgImages(id:string,key?:string,steamKey?:string){
  return [...group[0],...group[1]].slice(0,16);
 }
 
+/** Official TMDB landscape artwork for requested anime franchises.
+ * Delivers remote CDN URLs rather than redistributing images via GitHub.
+ * A single title can have 6-10 safe-to-display horizontal artwork variants.
+ */
+const ANIME_FRANCHISES=[
+ {query:"One Piece",match:/one piece|ワンピース/i},
+ {query:"Solo Leveling",match:/solo leveling|俺だけレベルアップ/i},
+ {query:"Jujutsu Kaisen",match:/jujutsu kaisen|呪術廻戦/i},
+ {query:"Demon Slayer",match:/demon slayer|kimetsu no yaiba|鬼滅の刃/i},
+ {query:"Dragon Ball Super",match:/dragon ball super|ドラゴンボール超/i},
+ {query:"Dragon Ball Z",match:/dragon ball z|ドラゴンボールz/i},
+ {query:"Chainsaw Man",match:/chainsaw man|チェンソーマン/i},
+ {query:"Bleach",match:/bleach|ブリーチ/i},
+ {query:"Naruto Shippuden",match:/naruto.*shippuden|ナルト/i},
+] as const;
+async function animeSpotlight(token:string|undefined){
+ if(!token)return [];
+ const base="https://api.themoviedb.org/3/";
+ const headers={"Authorization":"Bearer "+token};
+ const records=await Promise.allSettled(ANIME_FRANCHISES.map(async franchise=>{
+  const url=base+"search/tv?language=pt-BR&include_adult=false&query="+encodeURIComponent(franchise.query);
+  const found=await json(url,{headers});
+  const match=(found.results||[]).filter((v:any)=>
+   franchise.match.test(String(v.original_name||"")+" "+String(v.name||"")) &&
+   v.original_language==="ja" && Array.isArray(v.genre_ids)&&v.genre_ids.includes(16) &&
+   typeof v.backdrop_path==="string")
+   .sort((a:any,b:any)=>Number(b.vote_count||0)-Number(a.vote_count||0))[0];
+  if(!match)return null;
+  const imageData=await json(base+"tv/"+match.id+"/images?include_image_language=pt,en,null",{headers}).catch(()=>({backdrops:[]}));
+  const wide=(imageData.backdrops||[]).filter(landscapeImage)
+   .sort((a:any,b:any)=>imageScore(b)-imageScore(a))
+   .slice(0,11).map((v:any,i:number)=>({src:img(v.file_path),label:"Backdrop oficial "+(i+1)}))
+   .filter((v:any)=>v.src);
+  const first=img(match.backdrop_path);
+  if(first&&!wide.some((v:any)=>v.src===first))wide.unshift({src:first,label:"Backdrop original"});
+  if(!wide.length)return null;
+  return {id:"tmdb-tv-"+match.id,kind:"Anime",title:String(match.name||franchise.query),
+   subtitle:"Anime favorito · Artes horizontais TMDB",genres:["Anime","Ação"],platforms:["Anime"],
+   year:Number(String(match.first_air_date||"").slice(0,4))||0,provider:"tmdb",
+   sourceUrl:"https://www.themoviedb.org/tv/"+match.id,popularity:Math.max(100,Number(match.popularity)||0),
+   variants:wide.slice(0,12)};
+ }));
+ return records.flatMap(x=>x.status==="fulfilled"&&x.value?[x.value]:[]);
+}
+
 /** Public Kitsu anime catalogue, fallback if AniList rejects Cloudflare egress. */
 
 function kitsuMap(list:any[],tag:string){
@@ -179,10 +250,13 @@ function kitsuMap(list:any[],tag:string){
  return list.flatMap((v:any)=>{
   const a=v.attributes||{};
   if(a.ageRating==="R18" || a.nsfw===true)return [];
+  const coverDims=a.coverImage?.meta?.dimensions?.original || a.coverImage?.meta?.dimensions?.large;
+  const aspect=Number(coverDims?.width)/Number(coverDims?.height);
+  // Reject uncertain or portrait-like "coverImage"; no vertical poster in the TV rotation.
+  if(!Number.isFinite(aspect)||aspect<1.55||aspect>2.20)return [];
   const wide=a.coverImage?.original||a.coverImage?.large||"";
   const poster=a.posterImage?.original||a.posterImage?.large||"";
-  const variants=[...(typeof wide==="string"&&wide.startsWith("https://")?[{src:wide,label:"Arte panorâmica"}]:[]),
-    ...(typeof poster==="string"&&poster.startsWith("https://")?[{src:poster,label:"Pôster",focal:"50% 25%"}]:[])];
+  const variants=[...(typeof wide==="string"&&wide.startsWith("https://")?[{src:wide,label:"Arte panorâmica"}]:[])];
   // A poster alone is not an appropriate fullscreen TV wallpaper.
   if(!wide||! /^\d{1,9}$/.test(String(v.id||""))||!a.canonicalTitle)return [];
   const year=Number(String(a.startDate||"").slice(0,4))||0;
@@ -223,14 +297,36 @@ async function anime(){
  const data=await json("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query})});
  return (data?.data?.Page?.media||[]).flatMap((v:any)=>{
   if(!v.id||v.isAdult)return [];
-  const variants=[...(typeof v.bannerImage==="string"&&v.bannerImage.startsWith("https://")?[{src:v.bannerImage,label:"Banner do anime"}]:[]),
-    ...(typeof (v.coverImage?.extraLarge||v.coverImage?.large)==="string"?[{src:v.coverImage.extraLarge||v.coverImage.large,label:"Capa oficial",focal:"50% 25%"}]:[])];
+  const variants=[...(typeof v.bannerImage==="string"&&v.bannerImage.startsWith("https://")?[{src:v.bannerImage,label:"Banner do anime"}]:[])];
   if(!v.bannerImage||!variants.length)return []; // no portrait-only artwork in TV hero feed
   return [{id:"anilist-"+v.id,kind:"Anime",title:String(v.title?.english||v.title?.romaji||v.title?.native||""),subtitle:"Anime em alta · AniList",
     genres:v.genres||[],platforms:["Anime"],year:Number(v.seasonYear)||0,provider:"anilist",
     sourceUrl:"https://anilist.co/anime/"+v.id,popularity:Number(v.popularity)||0,variants}];
  }).slice(0,18);
 }
+async function animePopularBR(token:string|undefined){
+ if(!token)return [];
+ const base="https://api.themoviedb.org/3/discover/tv";
+ const headers={"Authorization":"Bearer "+token};
+ const tasks=await Promise.allSettled([1,2,3].map(page=>json(base+
+  "?language=pt-BR&sort_by=popularity.desc&watch_region=BR"+
+  "&with_watch_monetization_types=flatrate%7Cads&with_genres=16"+
+  "&with_original_language=ja&vote_count.gte=80&page="+page,{headers})));
+ return tasks.flatMap(x=>x.status==="fulfilled"?tmdbMap((x.value.results||[]).filter((v:any)=>
+  v.original_language==="ja" && v.genre_ids?.includes(16)), "Anime","Popular no Brasil"):[]);
+}
+async function animeCatalog(feed:Feed,token:string|undefined){
+ const tasks=await Promise.allSettled([animeSpotlight(token),animePopularBR(token),kitsu(feed),anime()]);
+ const spot=tasks[0].status==="fulfilled"?tasks[0].value:[];
+ const popular=tasks[1].status==="fulfilled"?tasks[1].value:[];
+ const kitsuList=tasks[2].status==="fulfilled"?tasks[2].value:[];
+ const aniList=tasks[3].status==="fulfilled"?tasks[3].value:[];
+ if(feed==="em-breve"||feed==="novas-temporadas")return mix([kitsuList,aniList.filter((x:any)=>feed==="em-breve"&&x.year>=yearNow())],[25,10],45);
+ if(!spot.length&&!popular.length&&!kitsuList.length&&!aniList.length)throw Error("Catálogo de animes indisponível");
+ if(spot.length+popular.length>=12)return mix([spot,popular],[12,65],85);
+ return mix([spot,popular,kitsuList,aniList],[12,33,16,12],85);
+}
+
 async function catalog(request:Request,env:Env,ctx:Context){
  if(request.method!=="GET")return response({error:"Método não permitido"},405);
  const url=new URL(request.url);
@@ -242,14 +338,14 @@ async function catalog(request:Request,env:Env,ctx:Context){
  if(imageId&&imageId.length>50)return response({error:"Identificador inválido"},400);
  // Namespace cache per catalog schema: avoid old pre-filter responses after deploy.
  const cacheUrl=new URL(request.url);
- cacheUrl.searchParams.set("__catalog_schema","fresh-v3");
+ cacheUrl.searchParams.set("__catalog_schema","br-anime-widescreen-v5");
  const cacheKey=new Request(cacheUrl.toString(),{method:"GET"});
  const edge=(caches as CacheStorage & {default:Cache}).default;
  try{const cached=await edge.match(cacheKey);if(cached)return cached;}catch{}
  try{
   const variants=imageId?(kind==="Filmes"||kind==="Séries"?await tmdbImages(kind,imageId,env.TMDB_READ_TOKEN):kind==="Jogos"?await rawgImages(imageId,env.RAWG_API_KEY,env.STEAMGRIDDB_API_KEY):[]):undefined;
-  const items=imageId?undefined:(kind==="Filmes"||kind==="Séries"?await tmdb(kind,env.TMDB_READ_TOKEN,feed):kind==="Jogos"?await rawg(env.RAWG_API_KEY,feed):await kitsu(feed).catch(()=>anime()));
-  const source=kind==="Filmes"||kind==="Séries"?"TMDB":kind==="Jogos"?"RAWG":items?.[0]?.provider==="kitsu"?"Kitsu":"AniList";
+  const items=imageId?undefined:(kind==="Filmes"||kind==="Séries"?await tmdb(kind,env.TMDB_READ_TOKEN,feed):kind==="Jogos"?await rawg(env.RAWG_API_KEY,feed):await animeCatalog(feed,env.TMDB_READ_TOKEN));
+  const source=kind==="Filmes"||kind==="Séries"?"TMDB":kind==="Jogos"?"RAWG":items?.[0]?.provider==="tmdb"?"TMDB + Kitsu/AniList":items?.[0]?.provider==="kitsu"?"Kitsu":"AniList";
   const result=response(imageId?{kind,source,id:imageId,variants}:{kind,source,items,feed,updatedAt:new Date().toISOString()},200,true);
   ctx.waitUntil(edge.put(cacheKey,result.clone()).catch(()=>{}));
   return result;

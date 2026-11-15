@@ -830,3 +830,33 @@ html[data-perf=leve] .smart-artwork--composite{background:linear-gradient(115deg
   max-width:100%;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap;font-size:13px;
 }
+
+
+/* Cinematic minimal Home — remove metadata noise without affecting catalog credits in the studio */
+.tv-home .tv-hero{padding-top:42px!important}
+.tv-home .hero-category{margin-top:3px!important;margin-bottom:10px!important;opacity:.88}
+.tv-home .hero-copy{width:54%!important;max-width:560px!important}
+.tv-home .hero-title{
+ font-size:clamp(23px,2.85vw,36px)!important;line-height:1.17!important;
+ -webkit-line-clamp:3!important;max-height:3.53em!important;
+ overflow-wrap:break-word!important;word-break:normal!important;
+ text-wrap:wrap!important;white-space:normal!important;hyphens:auto!important;
+ margin:0 0 11px!important;
+}
+.tv-home .tv-personalize{
+ height:36px!important;min-width:0!important;padding:0 13px!important;
+ font-size:12px!important;font-weight:500!important;
+ color:#fff!important;background:rgba(9,15,24,.55)!important;
+ border:1px solid rgba(255,255,255,.3)!important;box-shadow:none!important;
+ backdrop-filter:blur(7px);
+}
+.tv-home .tv-personalize:hover,.tv-home .tv-personalize:focus-visible {
+ border-color:#f2a34a!important;background:rgba(29,27,25,.8)!important;
+}
+.tv-home .tv-personalize svg{width:15px;height:15px;margin-right:7px}
+.tv-home .tv-content{height:145px!important;flex-basis:145px!important}
+@media(max-height:600px){
+ .tv-home .tv-hero{padding-top:17px!important}
+ .tv-home .hero-title{font-size:clamp(23px,2.65vw,33px)!important;max-height:3.53em!important}
+ .tv-home .tv-content{height:125px!important;flex-basis:125px!important}
+}

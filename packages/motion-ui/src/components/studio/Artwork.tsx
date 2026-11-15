@@ -27,8 +27,10 @@ export function Artwork({
  const focusY=useSetting<number>("wallpaper.focusY") ?? 50;
  const art=wallpaperSrc(wallpaper,thumbnail?"sm":quality,alt);
  const [dimensions,setDimensions]=useState({src:"",width:0,height:0});
- const smart=fitMode==="fill" ? "cover" : fitMode==="auto" ?
-    chooseWallpaperLayout(dimensions.src===art.src?dimensions.width:0,dimensions.src===art.src?dimensions.height:0) : "composite";
+ // Real landscape art fills the panel; portraits/panoramas preserve the entire subject.
+ // Manual "fill" is the only setting allowed to deliberately crop an image.
+ const smart=fitMode==="fill" ? "cover" :
+    chooseWallpaperLayout(dimensions.src===art.src?dimensions.width:0,dimensions.src===art.src?dimensions.height:0);
  const imageFocal=fitMode==="fill" ? String(focusX)+"% "+String(focusY)+"%" : art.focal;
  const filters=original?"none":artFilter(p,art.grade);
  const onLoad=(event:SyntheticEvent<HTMLImageElement>)=>{
