@@ -1,0 +1,53 @@
+name: Motion Laucher — TV preview e MRL PWA
+on:
+  push:
+    branches: [main, "feat/**"]
+    paths:
+      - "apps/tv-preview/**"
+      - "apps/mrl-pwa/**"
+      - "packages/motion-ui/**"
+      - "package.json"
+      - "tsconfig.json"
+      - "vitest.config.ts"
+      - ".github/workflows/web-frontends.yml"
+  pull_request:
+    paths:
+      - "apps/tv-preview/**"
+      - "apps/mrl-pwa/**"
+      - "packages/motion-ui/**"
+      - "package.json"
+      - "tsconfig.json"
+      - "vitest.config.ts"
+      - ".github/workflows/web-frontends.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies (no server/VPS)
+        run: npm install --no-audit --no-fund
+      - name: TypeScript validation
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Build TV preview
+        run: npm run build:tv
+      - name: Build standalone MRL PWA
+        run: npm run build:mrl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: motion-tv-preview
+          path: dist/tv-preview/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: motion-mrl-pwa
+          path: dist/mrl-pwa/
+          retention-days: 7

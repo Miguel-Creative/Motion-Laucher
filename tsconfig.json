@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "paths": {
+      "@/*": [
+        "./packages/motion-ui/src/*"
+      ]
+    },
+    "types": [
+      "vite/client",
+      "vitest/globals",
+      "node"
+    ]
+  },
+  "include": [
+    "packages/motion-ui/src/**/*.ts",
+    "packages/motion-ui/src/**/*.tsx",
+    "apps/tv-preview/src/**/*.tsx",
+    "apps/mrl-pwa/src/**/*.tsx",
+    "apps/*/vite.config.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "packages/motion-ui/src/test/app-routing.test.tsx"
+  ]
+}

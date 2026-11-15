@@ -7,7 +7,7 @@ ADB="${ADB_BIN:-$(command -v adb || true)}"
 [ -n "$ADB" ] || { echo "ERRO: adb nao encontrado"; exit 1; }
 help_text() {
   cat <<'EOF'
-Linkou HY300por — comandos:
+Motion Laucher HY300por — comandos:
   status                      Testar conexão, sistema e launcher
   memory                      RAM física, ZRAM e processos
   apps                        Listar aplicativos de terceiros

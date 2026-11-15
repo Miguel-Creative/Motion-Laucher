@@ -3,8 +3,8 @@ import {readFileSync} from 'node:fs';
 import {execFile} from 'node:child_process';
 
 const host='127.0.0.1';
-const port=Number(process.env.CREATIVE_REMOTE_PORT||8765);
-const target=process.env.CREATIVE_ADB_TARGET||'192.168.77.4:5555';
+const port=Number(process.env.MRL_REMOTE_PORT||8765);
+const target=process.env.MRL_ADB_TARGET||'192.168.77.4:5555';
 const adb=process.env.ADB_BIN||'adb';
 const page=readFileSync(new URL('./index.html',import.meta.url),'utf8');
 const keys=Object.freeze({home:3,back:4,up:19,down:20,left:21,right:22,ok:23,volumeUp:24,volumeDown:25,mute:164,playPause:85,menu:82});
@@ -73,6 +73,6 @@ http.createServer(async(req,res)=>{
     catch(err){json(res,400,{error:String(err.message||err).slice(0,160)})}
   });
 }).listen(port,host,()=>{
-  console.log('CreativeScreen Remote em http://'+host+':'+port);
+  console.log('Motion Laucher Remoto em http://'+host+':'+port);
   run(['connect',target],4000).catch(()=>{});
 });

@@ -1,4 +1,4 @@
-name: CreativeScreen Launcher CI
+name: Motion Laucher — Android Nativo CI
 on:
   push:
     paths: ['apps/projector-launcher/**', '.github/workflows/projector-ci.yml']
