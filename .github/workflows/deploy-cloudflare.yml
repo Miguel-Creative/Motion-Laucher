@@ -1,0 +1,60 @@
+name: Publicar Motion Laucher TV na Cloudflare (opcional)
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/catalog-worker/**"
+      - "apps/tv-preview/**"
+      - "packages/motion-ui/**"
+      - "wrangler.jsonc"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-cloudflare.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Verificar credenciais de publicação
+        id: auth
+        run: |
+          if [ -n "$CF_API_TOKEN" ] && [ -n "$CF_ACCOUNT_ID" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare não foi atualizada: configure CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID nos GitHub Actions Secrets." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.auth.outputs.enabled == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.auth.outputs.enabled == 'true'
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        if: steps.auth.outputs.enabled == 'true'
+        with:
+          version: '10'
+      - name: Instalar dependências
+        if: steps.auth.outputs.enabled == 'true'
+        run: pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false
+      - name: Testar frontend e compilar a TV
+        if: steps.auth.outputs.enabled == 'true'
+        run: |
+          pnpm run typecheck
+          pnpm run test
+          pnpm run build:tv
+      - name: Publicar Worker Cloudflare
+        if: steps.auth.outputs.enabled == 'true'
+        run: pnpm dlx wrangler@4.162.0 deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: URL de produção
+        if: steps.auth.outputs.enabled == 'true'
+        run: echo "Deploy comandado para https://motion-laucher.contato-creativezone.workers.dev — verificar as URLs após a conclusão." >> "$GITHUB_STEP_SUMMARY"
