@@ -31,16 +31,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10'
       - name: Install dependencies (no server/VPS)
-        run: npm install --no-audit --no-fund
+        run: pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false
       - name: TypeScript validation
-        run: npm run typecheck
+        run: pnpm run typecheck
       - name: Unit tests
-        run: npm test
+        run: pnpm run test
       - name: Build TV preview
-        run: npm run build:tv
+        run: pnpm run build:tv
       - name: Build standalone MRL PWA
-        run: npm run build:mrl
+        run: pnpm run build:mrl
       - uses: actions/upload-artifact@v4
         with:
           name: motion-tv-preview
