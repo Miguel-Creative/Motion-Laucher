@@ -577,3 +577,18 @@ html[data-perf=leve] .tv-wallpaper-enter, html[data-perf=leve] .tv-title-enter, 
 html[data-perf=leve] .app-tile, html[data-reduce-motion=true] .app-tile { transition:border-color 120ms; transform:none !important; }
 @media (prefers-reduced-motion: reduce) { .tv-wallpaper-enter, .tv-title-enter { animation:none; } .app-tile { transform:none !important; } }
 html[data-perf=cinematografico] .tv-wallpaper.tv-wallpaper-enter { animation:tv-wall-in 220ms ease-out both, art-drift 24s ease-in-out 220ms infinite alternate; }
+
+
+/* Enquadramento inteligente: nunca aplicar object-fit:fill em artes protegidas.
+   A segunda camada é opcional e desativada no perfil Leve de 1 GB RAM. */
+.smart-artwork{position:relative;display:block;isolation:isolate;overflow:hidden;background:linear-gradient(120deg,#152f40 0%,#263844 42%,#25202d 100%);}
+.smart-artwork .smart-artwork-primary{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
+.smart-artwork--composite .smart-artwork-primary{object-fit:contain;}
+.smart-artwork .smart-artwork-backdrop{position:absolute;inset:-4%;height:108%;width:108%;object-fit:cover;filter:blur(19px) brightness(.63) saturate(1.17);z-index:0;opacity:.84;pointer-events:none;}
+.smart-artwork .smart-artwork-halo{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,rgba(10,24,42,.48),transparent 58%);}
+.tv-scene .smart-artwork--composite .smart-artwork-primary{left:auto;right:1%;width:69%;height:100%;object-position:50% 50%!important;}
+html[data-perf=leve] .smart-artwork-backdrop,html[data-reduce-motion=true] .smart-artwork-backdrop{display:none;}
+html[data-perf=leve] .smart-artwork--composite{background:linear-gradient(115deg,#22303d,#304254 50%,#2e2d41);}
+@media (max-width:900px){
+ .tv-scene .smart-artwork--composite .smart-artwork-primary{right:0;width:100%;opacity:.92;}
+}
