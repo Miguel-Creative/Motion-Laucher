@@ -3,7 +3,9 @@
 ## Estrutura
 ```
 apps/projector-launcher/    Android (Kotlin/Java, nativo e leve)
-apps/phone-remote/          Android (controle, teclado e mouse; em implementação)
+apps/phone-remote/          Android nativo/bridge (controle, teclado, HID; em implementação)
+apps/phone-remote-web/      MVP local de controle no Samsung via ADB/Termux
+apps/phone-remote-pwa/      PWA definitiva (prevista após protótipo Lovable)
 apps/companion-input/      IME pequeno opcional para Unicode; em planejamento
 design/                    Design system / Lovable Studio / tokens
 docs/                      Requisitos, licença, segurança e desempenho
@@ -11,6 +13,13 @@ scripts/                   Migração, build e validação
 archives/                  Snapshot do launcher funcional, para migração
 upstream/                  Fontes abertas fixadas como submódulos
 ```
+
+## Independência da VPS
+O CreativeScreen OS **não depende de VPS, Linkou, back-end remoto ou login cloud para funcionar**. O GitHub armazena e compila o código via GitHub Actions; depois de instalada, a tela inicial Android funciona localmente.
+
+O app de celular definitivo será um cliente Android nativo/bridge local com interface PWA opcional. A PWA sozinha não pode executar ADB nem emular HID diretamente do navegador: precisa de uma ponte Android local autenticada ou de protocolo de dispositivo compatível. O MVP atual `apps/phone-remote-web/` usa Node no Termux **do celular**, disponível apenas enquanto esse processo estiver ativo; não é arquitetura final nem utiliza VPS.
+
+Lovable servirá para projetar **duas experiências completas**: o launcher gamer para portar para Android nativo e o Remote PWA mobile para desenvolver como frontend real. Ver `design/LOVABLE_BRIEF.md`.
 
 ## Processos
 **Projetor:** um processo HOME com tiles, cache de thumbnails e gerenciador de wallpapers. Não inserir WebView permanente, backend Node.js, IA local nem serviço de scan de rede em loop. Componentes opcionais somente sob demanda.
