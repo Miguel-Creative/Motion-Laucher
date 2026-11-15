@@ -183,7 +183,8 @@ function kitsuMap(list:any[],tag:string){
   const poster=a.posterImage?.original||a.posterImage?.large||"";
   const variants=[...(typeof wide==="string"&&wide.startsWith("https://")?[{src:wide,label:"Arte panorâmica"}]:[]),
     ...(typeof poster==="string"&&poster.startsWith("https://")?[{src:poster,label:"Pôster",focal:"50% 25%"}]:[])];
-  if(!variants.length||! /^\d{1,9}$/.test(String(v.id||""))||!a.canonicalTitle)return [];
+  // A poster alone is not an appropriate fullscreen TV wallpaper.
+  if(!wide||! /^\d{1,9}$/.test(String(v.id||""))||!a.canonicalTitle)return [];
   const year=Number(String(a.startDate||"").slice(0,4))||0;
   if(!year||year<current-2||year>current+3)return [];
   const title=String(a.titles?.en||a.canonicalTitle);
@@ -224,7 +225,7 @@ async function anime(){
   if(!v.id||v.isAdult)return [];
   const variants=[...(typeof v.bannerImage==="string"&&v.bannerImage.startsWith("https://")?[{src:v.bannerImage,label:"Banner do anime"}]:[]),
     ...(typeof (v.coverImage?.extraLarge||v.coverImage?.large)==="string"?[{src:v.coverImage.extraLarge||v.coverImage.large,label:"Capa oficial",focal:"50% 25%"}]:[])];
-  if(!variants.length)return [];
+  if(!v.bannerImage||!variants.length)return []; // no portrait-only artwork in TV hero feed
   return [{id:"anilist-"+v.id,kind:"Anime",title:String(v.title?.english||v.title?.romaji||v.title?.native||""),subtitle:"Anime em alta · AniList",
     genres:v.genres||[],platforms:["Anime"],year:Number(v.seasonYear)||0,provider:"anilist",
     sourceUrl:"https://anilist.co/anime/"+v.id,popularity:Number(v.popularity)||0,variants}];

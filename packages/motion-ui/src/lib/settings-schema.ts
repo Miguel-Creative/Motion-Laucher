@@ -233,10 +233,10 @@ export const SETTINGS_SECTIONS: SettingSection[] = [
   },
   {
     id: "profiles", label: "Perfis de Usuário", icon: Users, preview: "profile",
-    description: "Gamer, Cinema, Híbrido, Minimalista e Personalizado.",
+    description: "Estilos da interface, separados da identidade do usuário Google.",
     items: [
-      { id: "profiles.active", label: "Perfil ativo", description: "Define a ordem das fileiras e o destaque da tela inicial.", type: "segmented", default: "hibrido", options: o(["gamer", "Gamer"], ["cinema", "Cinema"], ["hibrido", "Híbrido"], ["minimalista", "Minimalista"], ["personalizado", "Personalizado"]) },
-      { id: "profiles.name", label: "Nome de exibição", description: "Mostrado na barra superior.", type: "text", default: "Miguel", placeholder: "Seu nome" },
+      { id: "profiles.active", label: "Estilo da tela", description: "Define a ordem das fileiras e o destaque visual; não representa uma conta Google.", type: "segmented", default: "hibrido", options: o(["gamer", "Gamer"], ["cinema", "Cinema"], ["hibrido", "Híbrido"], ["minimalista", "Minimalista"], ["personalizado", "Personalizado"]) },
+      { id: "profiles.name", label: "Nome local de exibição", description: "Usado na prévia web. A conta Google do projetor exigirá login autorizado no aplicativo Android.", type: "text", default: "", placeholder: "Seu nome (opcional)" },
       { id: "profiles.customRows", label: "Fileiras do perfil Personalizado", description: "Seções exibidas quando o perfil Personalizado está ativo.", type: "multi", default: ["favoritos", "jogos", "filmes", "apps", "acoes"], options: o(["favoritos", "Favoritos"], ["recentes", "Recentes"], ["jogos", "Jogos"], ["filmes", "Filmes e Séries"], ["streaming", "Streaming"], ["apps", "Categorias de apps"], ["hdmi", "Entradas HDMI"], ["acoes", "Ações rápidas"], ["dispositivo", "Dispositivo"]) },
       { id: "profiles.pin", label: "PIN para trocar de perfil", description: "Protege perfis com PIN local de 4 dígitos.", type: "toggle", default: false },
       { id: "profiles.kids", label: "Modo infantil", description: "Oculta títulos acima de 12 anos e apps de sistema.", type: "toggle", default: false },

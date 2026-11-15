@@ -473,17 +473,33 @@ input[type=checkbox],progress { accent-color:var(--primary); }
 button,select,input,textarea,a { scroll-margin:20px; }
 .tv-home { position:relative; isolation:isolate; }
 .tv-scene { position:absolute; inset:0 0 auto; height:600px; z-index:-1; overflow:hidden; }
-.tv-wallpaper { height:100%; width:100%; object-position:70% 40%; }
-.tv-local-scrim { position:absolute; inset:0; background:linear-gradient(90deg,color-mix(in oklab,var(--scrim) calc(var(--overlay)*100%),transparent),transparent 62%); }
+.tv-wallpaper { height:100%; width:100%; object-position:center; }
+.tv-local-scrim { position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,rgba(3,9,16,.86) 0%,rgba(3,9,16,.66) 24%,rgba(3,9,16,.20) 53%,transparent 77%); }
 .tv-bottom-fade { position:absolute; height:150px; inset:auto 0 0; background:var(--tv-fade); }
 .tv-header { height:86px; color:var(--on-art); }
 .tv-header nav { background:color-mix(in oklab,var(--background) 60%,transparent); border:1px solid var(--border); padding:4px; border-radius:8px; }
 .tv-header .font-display { text-shadow:var(--hero-text-shadow); }
 .tv-hero { height:325px; padding:26px 48px 0; position:relative; }
-.hero-copy { max-width:560px; color:var(--on-art); text-shadow:var(--hero-text-shadow); }
-.hero-title { font-size:48px; line-height:1.06; font-weight:700; margin-top:14px; max-width:460px; }
+.hero-copy { max-width:min(44vw,560px); min-width:0; color:var(--on-art); text-shadow:0 2px 14px rgba(0,0,0,.95); position:relative; z-index:1; }
+.hero-title { font-size:clamp(25px,3vw,46px); line-height:1.10; font-weight:700; margin-top:14px; max-width:510px; text-wrap:balance; overflow-wrap:break-word; }
 .demo-pill { display:inline-flex; align-items:center; border:1px solid color-mix(in oklab,var(--primary) 50%,transparent); background:color-mix(in oklab,var(--background) 75%,transparent); color:var(--primary); border-radius:4px; padding:4px 8px; font-size:10px; font-weight:600; }
-.hero-profile { position:absolute; right:42px; bottom:28px; display:flex; align-items:center; gap:10px; font-size:12px; background:color-mix(in oklab,var(--background) 75%,transparent); border:1px solid var(--border); border-radius:6px; padding:8px 12px; }
+.hero-profile { position:absolute; right:42px; bottom:20px; display:flex; align-items:center; gap:12px; font-size:12px; }
+.hero-greeting { display:flex; align-items:center; gap:6px; background:rgba(7,11,17,.84); border:1px solid rgba(255,255,255,.18); border-radius:8px; padding:10px 12px; color:#fff; }
+.hero-style-picker { display:flex; align-items:center; gap:7px; background:rgba(7,11,17,.84); border:1px solid rgba(255,255,255,.18); border-radius:8px; padding:5px 8px; color:#fff; }
+.hero-style-picker > span { font-size:10px; opacity:.76; }
+.hero-style-picker select { background:rgba(255,255,255,.10); color:#fff; }
+.motion-brand-mascot { width:40px; height:40px; flex:none; object-fit:contain; filter:drop-shadow(0 1px 4px rgba(0,0,0,.25)); }
+.tv-home[data-copy-side="right"] .tv-local-scrim { transform:scaleX(-1); }
+.tv-home[data-copy-side="right"] .hero-copy { margin-left:auto; text-align:right; }
+.tv-home[data-copy-side="right"] .hero-copy > .flex { justify-content:flex-end; }
+.tv-home[data-copy-side="right"] .hero-profile { left:42px;right:auto; }
+@media(max-width:1000px){
+  .hero-copy { max-width:60vw; }
+  .hero-style-picker > span { display:none; }
+  .tv-hero { padding-inline:26px; }
+  .hero-profile { right:26px; }
+  .tv-home[data-copy-side="right"] .hero-profile { left:26px; }
+}
 .tv-content { padding:0 48px; }
 .rail-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
 .rail-heading h2 { font-family:var(--font-display); font-size:18px; font-weight:600; }
@@ -586,9 +602,19 @@ html[data-perf=cinematografico] .tv-wallpaper.tv-wallpaper-enter { animation:tv-
 .smart-artwork--composite .smart-artwork-primary{object-fit:contain;}
 .smart-artwork .smart-artwork-backdrop{position:absolute;inset:-4%;height:108%;width:108%;object-fit:cover;filter:blur(19px) brightness(.63) saturate(1.17);z-index:0;opacity:.84;pointer-events:none;}
 .smart-artwork .smart-artwork-halo{position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,rgba(10,24,42,.48),transparent 58%);}
-.tv-scene .smart-artwork--composite .smart-artwork-primary{left:auto;right:1%;width:69%;height:100%;object-position:50% 50%!important;}
-html[data-perf=leve] .smart-artwork-backdrop,html[data-reduce-motion=true] .smart-artwork-backdrop{display:none;}
+/* Portrait art is never stretched. A full-bleed backdrop fills the TV, while
+   the original image remains intact and its edges fade into the backdrop. */
+.tv-scene .smart-artwork--composite .smart-artwork-primary {
+  inset:0; width:100%; height:100%; object-fit:contain; object-position:center!important;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,black 18%,black 82%,transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0%,black 18%,black 82%,transparent 100%);
+}
+.tv-scene .smart-artwork--composite .smart-artwork-backdrop {
+  inset:-3%;width:106%;height:106%;filter:blur(16px) brightness(.84) saturate(1.12);
+  opacity:1;
+}
+html[data-perf=leve] .smart-artwork-backdrop,html[data-reduce-motion=true] .smart-artwork-backdrop{filter:none;opacity:.55;}
 html[data-perf=leve] .smart-artwork--composite{background:linear-gradient(115deg,#22303d,#304254 50%,#2e2d41);}
 @media (max-width:900px){
- .tv-scene .smart-artwork--composite .smart-artwork-primary{right:0;width:100%;opacity:.92;}
+ .tv-scene .smart-artwork--composite .smart-artwork-primary{width:100%;opacity:.95;}
 }
