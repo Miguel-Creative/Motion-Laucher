@@ -20,6 +20,8 @@ export interface Wallpaper {
   genres: string[];
   platforms: string[];
   year: number;
+  /** Verified ISO date for this content's original release/premiere, when provider supplies full day/month/year. */
+  releaseDate?: string;
   provider: "demo" | "upload" | "tmdb" | "rawg" | "igdb" | "steamgriddb" | "anilist" | "kitsu";
   sourceUrl?: string;
   externalIds?: { tmdb?: string; imdb?: string; rawg?: string };

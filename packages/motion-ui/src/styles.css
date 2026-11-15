@@ -892,3 +892,22 @@ html[data-surface="tv"] body{overflow:hidden!important;}
  .tv-home .tv-header nav > *{padding-left:6px!important;padding-right:6px!important;font-size:11px!important;}
  .tv-header .tv-brand-link .font-display{font-size:14px!important;}
 }
+
+
+/* Slightly brighter wallpaper: local shadow only beneath the title, never a heavy full-screen veil. */
+.tv-home .tv-local-scrim {
+ background:linear-gradient(90deg,rgba(4,9,17,.58) 0%,rgba(5,11,18,.30) 36%,rgba(6,13,19,.025) 75%,transparent 100%)!important;
+}
+.tv-home .tv-bottom-fade {
+ background:linear-gradient(0deg,rgba(8,11,16,.70),transparent)!important;
+}
+.tv-home .hero-details {
+ white-space:normal!important;display:flex!important;flex-wrap:wrap!important;
+ gap:7px!important;align-items:center!important;margin-bottom:12px!important;
+ font-size:12px!important;
+}
+.tv-home .hero-release-date {
+ margin-left:0!important;white-space:nowrap!important;
+ color:#fff!important;font-weight:600!important;
+ text-shadow:0 2px 7px rgba(0,0,0,.8);
+}

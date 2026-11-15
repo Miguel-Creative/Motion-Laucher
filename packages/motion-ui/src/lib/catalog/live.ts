@@ -56,7 +56,10 @@ function normalize(raw:unknown):Wallpaper|null {
  return {id:r.id,title:String(r.title).slice(0,160),subtitle:String(r.subtitle||"Catálogo real"),kind,
   genres:Array.isArray(r.genres)?r.genres.map(String).slice(0,8):[],
   platforms:Array.isArray(r.platforms)?r.platforms.map(String).slice(0,6):[],
-  year:Number(r.year)||0,provider:r.provider,popularity:Number(r.popularity)||0,
+  year:Number(r.year)||0,
+  releaseDate:typeof r.releaseDate==="string" && /^\d{4}-\d{2}-\d{2}$/.test(r.releaseDate) &&
+    !Number.isNaN(Date.parse(r.releaseDate)) ? r.releaseDate : undefined,
+  provider:r.provider,popularity:Number(r.popularity)||0,
   sourceUrl:typeof r.sourceUrl==="string"&&r.sourceUrl.startsWith("https://")?r.sourceUrl:undefined,
   variants};
 }

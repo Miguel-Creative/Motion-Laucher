@@ -8,6 +8,7 @@ import { Artwork } from "./Artwork";
 import { APP_TONES } from "@/data/apps";
 import { availableLauncherApps, isNativeLauncher } from "@/lib/device/native-android";
 import { useCurrentWallpaper } from "@/lib/wallpaper";
+import { formatReleaseDate } from "@/lib/catalog/format-release";
 import { useAppState } from "@/lib/store";
 import { launchApp } from "@/lib/actions";
 import { onBridge } from "@/lib/device/bridge-channel";
@@ -59,7 +60,9 @@ export function TVHome() {
         <div className="hero-copy">
           <p className="hero-category"><Gamepad2 size={16}/>{wallpaper.kind} · Em destaque</p>
           <h1 key={wallpaper.id} className="hero-title tv-title-enter" title={wallpaper.title}>{wallpaper.title}</h1>
-          <p className="hero-details">{wallpaper.genres.slice(0, 3).join(" · ")} <span>{wallpaper.year}</span></p>
+          <p className="hero-details">{wallpaper.genres.slice(0, 2).join(" · ")}
+            <span className="hero-release-date">{formatReleaseDate(wallpaper)}</span>
+          </p>
           <Button data-nav data-nav-default asChild className="tv-personalize tv-focusable" size="lg">
             <Link to="/wallpapers"><SlidersHorizontal size={18}/>Personalizar tela</Link>
           </Button>

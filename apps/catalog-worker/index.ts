@@ -10,6 +10,14 @@ const validFeeds=new Set<Feed>(["destaques","em-alta","em-breve","melhores","nov
 const iso=(d:Date)=>d.toISOString().slice(0,10);
 const shift=(months:number)=>{const d=new Date();d.setUTCMonth(d.getUTCMonth()+months);return iso(d);};
 const yearNow=()=>new Date().getUTCFullYear();
+/** Only complete ISO dates are displayed; never fabricate a day for year-only data. */
+export function safeReleaseDate(value:unknown):string|undefined{
+ const str=typeof value==="string"?value:"";
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(str))return undefined;
+ const [year,month,day]=str.split("-").map(Number);
+ const date=new Date(Date.UTC(year,month-1,day));
+ return date.getUTCFullYear()===year && date.getUTCMonth()===month-1 && date.getUTCDate()===day ? str : undefined;
+}
 function unique(items:any[],count=24){
  const map=new Map<string,any>();
  for(const item of items)if(item && !map.has(item.id))map.set(item.id,item);
@@ -62,7 +70,8 @@ function tmdbMap(list:any[],kind:Kind,category:string) {
   if(kind==="Séries"&&v.original_language==="ja"&&Array.isArray(v.genre_ids)&&v.genre_ids.includes(16))return [];
   const year=Number(String(v.release_date||v.first_air_date||"").slice(0,4))||0;
   return [{id:"tmdb-"+media+"-"+v.id,kind,title:String(v.title||v.name||""),
-   subtitle:category+" · TMDB",genres:[],platforms:[],year,provider:"tmdb",
+   subtitle:category+" · TMDB",genres:[],platforms:[],year,
+   releaseDate:safeReleaseDate(v.release_date||v.first_air_date),provider:"tmdb",
    sourceUrl:"https://www.themoviedb.org/"+media+"/"+v.id,popularity:Number(v.popularity)||0,
    variants:[{src:wide,label:"Imagem horizontal oficial · TMDB"}]}];
  });
@@ -137,7 +146,7 @@ function rawgMap(list:any[],tag:string){
   return [{id:"rawg-"+v.id,kind:"Jogos",title:String(v.name||""),subtitle:tag+" · RAWG",
    genres:(v.genres||[]).map((g:any)=>String(g.name)).slice(0,5),
    platforms:(v.platforms||[]).map((p:any)=>String(p.platform?.name||"")).filter(Boolean).slice(0,4),
-   year,provider:"rawg",sourceUrl:"https://rawg.io/games/"+encodeURIComponent(String(v.slug||v.id)),
+   year,releaseDate:safeReleaseDate(v.released),provider:"rawg",sourceUrl:"https://rawg.io/games/"+encodeURIComponent(String(v.slug||v.id)),
    popularity:Number(v.added)||0,variants:[{src:v.background_image,label:"Arte do jogo"}]}];
  });
 }
@@ -237,7 +246,8 @@ async function animeSpotlight(token:string|undefined){
   if(!wide.length)return null;
   return {id:"tmdb-tv-"+match.id,kind:"Anime",title:String(match.name||franchise.query),
    subtitle:"Anime favorito · Artes horizontais TMDB",genres:["Anime","Ação"],platforms:["Anime"],
-   year:Number(String(match.first_air_date||"").slice(0,4))||0,provider:"tmdb",
+   year:Number(String(match.first_air_date||"").slice(0,4))||0,
+   releaseDate:safeReleaseDate(match.first_air_date),provider:"tmdb",
    sourceUrl:"https://www.themoviedb.org/tv/"+match.id,popularity:Math.max(100,Number(match.popularity)||0),
    variants:wide.slice(0,12)};
  }));
@@ -264,7 +274,7 @@ function kitsuMap(list:any[],tag:string){
   if(!year||year<current-2||year>current+3)return [];
   const title=String(a.titles?.en||a.canonicalTitle);
   return [{id:"kitsu-"+v.id,kind:"Anime",title,subtitle:tag+" · Kitsu",genres:[],platforms:["Anime"],
-   year,provider:"kitsu",sourceUrl:"https://kitsu.app/anime/"+encodeURIComponent(String(a.slug||v.id)),
+   year,releaseDate:safeReleaseDate(a.startDate),provider:"kitsu",sourceUrl:"https://kitsu.app/anime/"+encodeURIComponent(String(a.slug||v.id)),
    popularity:Number(a.userCount)||0,variants}];
  });
 }
@@ -294,14 +304,17 @@ async function kitsu(feed:Feed){
  return mix(lists,[7,9,7,6],27);
 }
 async function anime(){
- const query="query { Page(page:1,perPage:18) { media(type:ANIME,sort:TRENDING_DESC,isAdult:false) { id title { romaji english native } coverImage { extraLarge large } bannerImage genres seasonYear popularity isAdult } } }";
+ const query="query { Page(page:1,perPage:18) { media(type:ANIME,sort:TRENDING_DESC,isAdult:false) { id title { romaji english native } coverImage { extraLarge large } bannerImage genres seasonYear startDate { year month day } popularity isAdult } } }";
  const data=await json("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query})});
  return (data?.data?.Page?.media||[]).flatMap((v:any)=>{
   if(!v.id||v.isAdult)return [];
   const variants=[...(typeof v.bannerImage==="string"&&v.bannerImage.startsWith("https://")?[{src:v.bannerImage,label:"Banner do anime"}]:[])];
   if(!v.bannerImage||!variants.length)return []; // no portrait-only artwork in TV hero feed
   return [{id:"anilist-"+v.id,kind:"Anime",title:String(v.title?.english||v.title?.romaji||v.title?.native||""),subtitle:"Anime em alta · AniList",
-    genres:v.genres||[],platforms:["Anime"],year:Number(v.seasonYear)||0,provider:"anilist",
+    genres:v.genres||[],platforms:["Anime"],year:Number(v.startDate?.year||v.seasonYear)||0,
+    releaseDate:safeReleaseDate(v.startDate?.year && v.startDate?.month && v.startDate?.day ?
+      String(v.startDate.year).padStart(4,"0")+"-"+String(v.startDate.month).padStart(2,"0")+"-"+String(v.startDate.day).padStart(2,"0") : null),
+    provider:"anilist",
     sourceUrl:"https://anilist.co/anime/"+v.id,popularity:Number(v.popularity)||0,variants}];
  }).slice(0,18);
 }
@@ -339,7 +352,7 @@ async function catalog(request:Request,env:Env,ctx:Context){
  if(imageId&&imageId.length>50)return response({error:"Identificador inválido"},400);
  // Namespace cache per catalog schema: avoid old pre-filter responses after deploy.
  const cacheUrl=new URL(request.url);
- cacheUrl.searchParams.set("__catalog_schema","br-anime-widescreen-v6");
+ cacheUrl.searchParams.set("__catalog_schema","br-anime-widescreen-release-v7");
  const cacheKey=new Request(cacheUrl.toString(),{method:"GET"});
  const edge=(caches as CacheStorage & {default:Cache}).default;
  try{const cached=await edge.match(cacheKey);if(cached)return cached;}catch{}
