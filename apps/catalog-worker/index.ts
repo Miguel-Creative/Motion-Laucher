@@ -50,6 +50,25 @@ async function rawgImages(id:string,key?:string){
  return (data.results||[]).filter((v:any)=>typeof v.image==="string"&&v.image.startsWith("https://"))
   .slice(0,12).map((v:any,i:number)=>({src:v.image,label:"Captura "+(i+1)}));
 }
+
+/** Public Kitsu anime catalogue, fallback if AniList rejects Cloudflare egress. */
+async function kitsu(){
+ const data=await json("https://kitsu.io/api/edge/anime?sort=-userCount&page%5Blimit%5D=20",{headers:{"Accept":"application/vnd.api+json"}});
+ return (Array.isArray(data.data)?data.data:[]).flatMap((v:any)=>{
+  const a=v.attributes||{};
+  const wide=a.coverImage?.original||a.coverImage?.large||"";
+  const poster=a.posterImage?.original||a.posterImage?.large||"";
+  const variants=[...(wide.startsWith("https://")?[{src:wide,label:"Capa panorâmica"}]:[]),
+    ...(poster.startsWith("https://")?[{src:poster,label:"Pôster original",focal:"50% 25%"}]:[])];
+  if(!variants.length||!/^\d{1,9}$/.test(String(v.id||""))||!a.canonicalTitle)return [];
+  return [{id:"kitsu-"+v.id,kind:"Anime",title:String(a.titles?.en||a.canonicalTitle),
+    subtitle:"Anime popular · Kitsu",genres:[],platforms:["Anime"],
+    year:Number(String(a.startDate||"").slice(0,4))||0,provider:"kitsu",
+    sourceUrl:"https://kitsu.app/anime/"+encodeURIComponent(String(a.slug||v.id)),
+    popularity:Number(a.userCount)||0,variants}];
+ });
+}
+
 async function anime(){
  const query="query { Page(page:1,perPage:18) { media(type:ANIME,sort:TRENDING_DESC,isAdult:false) { id title { romaji english native } coverImage { extraLarge large } bannerImage genres seasonYear popularity isAdult } } }";
  const data=await json("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query})});
@@ -74,8 +93,8 @@ async function catalog(request:Request,env:Env,ctx:Context){
  try{const cached=await edge.match(request);if(cached)return cached;}catch{}
  try{
   const variants=imageId?(kind==="Filmes"||kind==="Séries"?await tmdbImages(kind,imageId,env.TMDB_READ_TOKEN):kind==="Jogos"?await rawgImages(imageId,env.RAWG_API_KEY):[]):undefined;
-  const items=imageId?undefined:(kind==="Filmes"||kind==="Séries"?await tmdb(kind,env.TMDB_READ_TOKEN):kind==="Jogos"?await rawg(env.RAWG_API_KEY):await anime());
-  const source=kind==="Filmes"||kind==="Séries"?"TMDB":kind==="Jogos"?"RAWG":"AniList";
+  const items=imageId?undefined:(kind==="Filmes"||kind==="Séries"?await tmdb(kind,env.TMDB_READ_TOKEN):kind==="Jogos"?await rawg(env.RAWG_API_KEY):await anime().catch(()=>kitsu()));
+  const source=kind==="Filmes"||kind==="Séries"?"TMDB":kind==="Jogos"?"RAWG":items?.[0]?.provider==="kitsu"?"Kitsu":"AniList";
   const result=response(imageId?{kind,source,id:imageId,variants}:{kind,source,items,updatedAt:new Date().toISOString()},200,true);
   ctx.waitUntil(edge.put(request,result.clone()).catch(()=>{}));
   return result;

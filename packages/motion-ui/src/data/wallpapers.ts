@@ -20,7 +20,7 @@ export interface Wallpaper {
   genres: string[];
   platforms: string[];
   year: number;
-  provider: "demo" | "upload" | "tmdb" | "rawg" | "igdb" | "steamgriddb" | "anilist";
+  provider: "demo" | "upload" | "tmdb" | "rawg" | "igdb" | "steamgriddb" | "anilist" | "kitsu";
   sourceUrl?: string;
   externalIds?: { tmdb?: string; imdb?: string; rawg?: string };
   variants: ArtVariant[];
@@ -78,5 +78,5 @@ export function wallpaperSrc(wp: Wallpaper, quality: ArtQuality, variantIndex = 
 }
 
 export const PROVIDER_LABEL: Record<Wallpaper["provider"], string> = {
-  demo: "Demonstração", upload: "Local", tmdb: "TMDB", rawg: "RAWG", igdb: "IGDB", steamgriddb: "SteamGridDB", anilist: "AniList",
+  demo: "Demonstração", upload: "Local", tmdb: "TMDB", rawg: "RAWG", igdb: "IGDB", steamgriddb: "SteamGridDB", anilist: "AniList", kitsu: "Kitsu",
 };

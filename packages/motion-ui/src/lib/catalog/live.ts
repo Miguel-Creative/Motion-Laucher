@@ -17,11 +17,11 @@ const subscribe=(l:()=>void)=>{listeners.add(l);return ()=>listeners.delete(l);}
 const snap=()=>entries;
 const healthSnap=()=>health;
 const unavailable=(cause:string)=>cause.includes("não configurad")?"Aguardando chave de integração":cause;
-const allowedProvider=new Set(["tmdb","rawg","anilist"]);
+const allowedProvider=new Set(["tmdb","rawg","anilist","kitsu"]);
 function normalize(raw:unknown):Wallpaper|null {
  if(!raw||typeof raw!=="object")return null;
  const r=raw as Record<string,any>;
- if(typeof r.id!=="string"||!/^((tmdb-(movie|tv)|rawg|anilist)-[0-9]{1,9})$/.test(r.id))return null;
+ if(typeof r.id!=="string"||!/^((tmdb-(movie|tv)|rawg|anilist|kitsu)-[0-9]{1,9})$/.test(r.id))return null;
  const kind=r.kind as WallpaperKind;
  if(!["Filmes","Séries","Jogos","Anime"].includes(kind)||!allowedProvider.has(r.provider))return null;
  const variants=(Array.isArray(r.variants)?r.variants:[]).slice(0,16).filter((v:any)=>typeof v?.src==="string"&&v.src.startsWith("https://"))
@@ -53,10 +53,10 @@ export async function refreshLiveCatalog(){
  const merged=results.flatMap(r=>r.items.length?r.items:old.filter(w=>w.kind===(r.kind==="Animes"?"Anime":r.kind)));
  const dedup=new Map(merged.map(x=>[x.id,x]));
  entries=[...dedup.values()];
- const errors:Object=Object.fromEntries(results.filter(r=>r.error).map(r=>[r.kind,r.error]));
- health={loading:false,live:entries.length,errors:errors as Record<string,string>,updatedAt:Date.now()};
+ const errors:Record<string,string>=Object.fromEntries(results.filter(r=>r.error).map(r=>[r.kind,r.error]));
+ health={loading:false,live:entries.length,errors,updatedAt:Date.now()};
  notify();
- if(entries.length && getState().currentWallpaper.startsWith("g-")||entries.length&&/^[afsm]-/.test(getState().currentWallpaper)){
+ if(entries.length && /^[afsmg]-/.test(getState().currentWallpaper)){
   setState({currentWallpaper:entries[0].id});
  }
 }
