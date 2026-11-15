@@ -1,19 +1,16 @@
-# Orçamento de desempenho e proteção do hardware
+# Desempenho e HY300por
 
-## Aparelho-alvo
-HY300por, Android 11, ARMv7 32-bit, RAM física ~960 MiB e ZRAM ativa ~845 MiB. A ZRAM é RAM comprimida, não nova memória física.
+HY300por: Android 11, arquitetura `armeabi-v7a` 32 bits, RAM física aproximada de 960 MiB; ZRAM já ativa (~845 MiB no diagnóstico anterior), **não é RAM física adicional**.
 
-## Orçamentos iniciais (metas, não medições)
-- Launcher em perfil Lite: **PSS em repouso ≤ 50 MiB**; ideal ≤ 35 MiB.
-- Nenhum decoder de vídeo ou webview sempre ativo no projetor.
-- Primeira tela pronta em ≤ 2 segundos em hardware limitado, a ser medido.
-- Wallpape​r em Lite: JPEG/WebP, long edge ≤1280 px, downsampling por resolução, um bitmap visível por vez e preload apenas do próximo se houver folga.
-- Cache de wallpapers em disco 100 MiB por padrão, configurável e com política LRU; cache de RAM restrito à miniatura mais próxima.
-- Pré-carregamento e animação só se o dispositivo não apresentar pressão de memória; respeitar Battery Saver e modo offline.
-- Rotação de fundo ajustável pelo usuário; OFF por padrão em Lite. Evitar chamadas de API em loop e sync permanente.
-- Não mexer na partição de sistema, swap no armazenamento nem kernel; priorizar medição e remoções reversíveis.
+## Metas (não medições)
+- Launcher Android em perfil Leve: PSS em repouso ≤ 50 MiB, ideal ≤ 35 MiB; medir no dispositivo.
+- HOME pronta em até 2 segundos como objetivo de otimização, não promessa.
+- Wallpaper estático em 1280x720 ou menor, cache LRU e baixa quantidade de bitmaps carregados.
+- Evitar WebView, React, Node.js, video wallpaper, blur contínuo e serviços de IA residentes no projetor.
+- Animações de 150–250ms apenas em eventos de usuário; desligar sob pressão de memória ou reduzir movimento.
+- Não modificar swap/kernel ou desativar componentes críticos sem ensaio, backup e caminho de retorno.
 
-## Métricas por build
-`adb shell dumpsys meminfo <pacote>` (PSS), `dumpsys gfxinfo` (jank), `top`, `/proc/meminfo`, inicialização fria, tempo entre teclas, temperatura e estabilidade 20 minutos. Testar HDR/codec/HDMI só onde pertinente.
+## Medição
+`adb shell dumpsys meminfo <pacote>`, `dumpsys gfxinfo`, tempo de inicialização, `/proc/meminfo`, RAM/ZRAM, CPU, queda de quadros e estabilidade sob reprodução. Repetir testes antes/depois no mesmo estado do aparelho.
 
-A compactação do APK (R8, shrinkResources, WebP) diminui **tamanho no disco**, mas não garante menor RAM. Medir depois de compilar e executar.
+Os builds web servem para revisar layout e funcionalidades do PWA. **Compactação de APK ≠ otimização de RAM.**

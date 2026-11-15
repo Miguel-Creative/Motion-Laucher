@@ -1,32 +1,51 @@
-# CreativeScreen OS 🎮📺
+# Motion Laucher 🎮📺
 
-**Sistema de tela inicial e controle remoto para projetores Android, TV Box e Android TV.** Este é um projeto independente; a Linkou MCP Remoto pode operar como ferramenta externa de automação, mas não é parte do runtime nem do repositório.
+Launcher Android para projetores/TV Box com companion **Motion Laucher Remoto (MRL)** para celular. Código-fonte aberto, sem dependência de VPS ou Linkou para execução. Idioma da interface: **português brasileiro**.
 
-## Visão de produto
-- **CreativeScreen Launcher:** interface gamer/cinema nativa, favoritos, busca, biblioteca, perfis, painéis de configuração, widgets opcionais e wallpapers alternados entre **Jogos**, **Filmes**, **Séries** e **Misto**.
-- **CreativeScreen Remote (celular):** controle direcional, teclado Unicode, touchpad/mouse, atalhos, áudio, gestão de apps e arquivos, diagnósticos, macros e ADB autenticado. Modo Bluetooth HID e Android TV Remote v2 quando compatíveis.
-- **CreativeScreen Studio:** protótipo visual em Lovable exportado como referência; implementação de produção Android nativa para preservar RAM.
-- **Modo adaptativo:** *Lite / Balanced / Cinematic*, escolhidos com base em memória real, resolução, disponibilidade da rede e opção do usuário.
+## Estrutura independente
+| Componente | Pasta | Estado atual |
+|---|---|---|
+| **Launcher Android nativo** | [apps/projector-launcher](apps/projector-launcher) | Base leve Kotlin/Java compilável (derivada do TV Launcher GPL); interface gamer do protótipo **ainda não portada** para Android |
+| **Prévia TV / tema gamer** | [apps/tv-preview](apps/tv-preview) | Aplicação web própria, viewport 16:9, HOME de tela única, biblioteca, wallpapers, ajustes |
+| **MRL — PWA** | [apps/mrl-pwa](apps/mrl-pwa) | Aplicação separada, interface mobile e service worker para uso offline da interface; controles Android **ainda simulados** |
+| **Componentes compartilhados** | [packages/motion-ui](packages/motion-ui) | Tema, artes, componentes visuais, dados de demonstração e motor de preferências |
+| **Ponte local ADB experimental** | [apps/mrl-bridge](apps/mrl-bridge) | Servidor opcional executado **no celular** (localhost); ainda não integrado ao PWA final |
+| **Ferramentas de administração** | [tools/hy300por-adb](tools/hy300por-adb) | Scripts locais para ADB Wi-Fi com autorização; sem root |
+| **Biblioteca de referências** | [upstream](upstream) | Submódulos Git fixados; **não** são incorporados automaticamente aos binários |
 
-**Primeiro alvo de validação:** HY300por, Android 11 / ARMv7 32-bit / ~1 GiB RAM. Nenhuma promessa de compatibilidade universal sem teste de hardware.
+O controle do projetor pela Linkou pode ser usado para tarefas de desenvolvimento, mas **Linkou não é uma dependência deste projeto**. Não há backend VPS obrigatório.
 
-## Estado atual
-- Repositórios de referência registrados como **submódulos Git**, com commits fixados e licença documentada.
-- Código completo do launcher HY300por migrado para `apps/projector-launcher/`, e APK independente compilado com sucesso. Backup de código em `archives/legacy-launcher-source.tar.gz`. Os submódulos externos ainda não estão integrados em um único APK.
-- Recursos administrativos do TvToolsPro estão especificados para implementação, mas o projeto original não informa licença de reutilização; seu código permanece uma **referência externa não incorporada ao produto** até obtermos permissão/licença.
-- Sem acesso root, sem remoções irreversíveis e sem serviços pesados rodando no projetor.
-
-## Começar
+## Desenvolvimento (Node.js >=22)
 ```bash
-git clone --recurse-submodules https://github.com/Miguel-Creative/CreativeScreen-OS.git
-cd CreativeScreen-OS
-cd apps/projector-launcher && ./gradlew assembleFdroidRelease
+npm install
+npm run dev:tv       # prévia TV em localhost:5173
+npm run dev:mrl      # MRL em localhost:5174 (separado da TV)
+npm run typecheck
+npm test
+npm run build:web    # dist/tv-preview e dist/mrl-pwa
 ```
 
-Veja [Arquitetura](docs/ARCHITECTURE.md), [Plano de integração](docs/INTEGRATION_PLAN.md), [Fontes e licenças](docs/UPSTREAMS_AND_LICENSES.md), [Brief para Lovable](design/LOVABLE_BRIEF.md) e [Orçamento de desempenho](docs/PERFORMANCE.md).
+Cada build gera um frontend independente. O MRL precisa de HTTPS (ou localhost) para instalação PWA. Para disponibilizar rotas client-side em produção, configure fallback de navegação para `index.html` no provedor estático.
 
-## Licenciamento e atribuições
-Licença geral GPL-3.0, respeitando arquivos LICENSE/NOTICE de cada fonte. Projetos MIT podem servir de base; qualquer código com licença não identificada fica excluído dos binários até esclarecimento. Wallpapers, logos e pôsteres de franquias pertencem aos respectivos titulares; não incluímos acervos sem direitos definidos.
+## Launcher Android
+```bash
+cd apps/projector-launcher
+./gradlew assembleFdroidRelease
+```
+Exige JDK/Android SDK e uma assinatura adequada para distribuição/atualizações. A compilação é feita opcionalmente no GitHub Actions; não é necessário manter SDK, clones ou processos em uma VPS. Não substitua o launcher OEM sem testar a recuperação.
 
-## Controle do celular
-O MVP `apps/phone-remote-web/` utiliza Node.js no Termux do próprio celular e comandos ADB autorizados por Wi-Fi. Não é o aplicativo Android nativo definitivo.
+## Design
+- HOME de TV em tela única, wallpaper luminoso sem sobreposição preta excessiva, dock compacto e navegação por controle físico.
+- Catálogos de **Jogos, Filmes, Séries, Animes** e outras categorias nas páginas Biblioteca e Wallpapers.
+- MRL é um aplicativo **distinto**, com teclado, mouse/touchpad, controles e ferramentas administrativas.
+- Perfis Leve, Equilibrado e Cinematográfico para adequar animações e imagens ao aparelho.
+- Acessos a IMDB/TMDB/RAWG/IGDB/SteamGridDB só por integrações oficiais e com credenciais e direitos adequados; dados atuais explicitamente demonstrativos.
+
+## Documentação
+- [Arquitetura e builds](docs/ARCHITECTURE.md)
+- [Plano de integração](docs/INTEGRATION_PLAN.md)
+- [Licenças e fontes externas](docs/UPSTREAMS_AND_LICENSES.md)
+- [Desempenho do HY300por](docs/PERFORMANCE.md)
+- [Design visual](design/MOTION_DESIGN_SPEC.md)
+
+Este repositório substitui a organização anterior chamada CreativeScreen. O repositório de exportação `motion-laucher-studio` permanece como arquivo de segurança, mas **não é necessário para compilar ou executar** os aplicativos deste repositório.

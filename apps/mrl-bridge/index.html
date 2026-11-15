@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>CreativeScreen Remote</title><style>
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Motion Laucher Remoto</title><style>
 :root{color-scheme:dark;--accent:#fa9c40;--surface:#181b24;--line:#363b48}*{box-sizing:border-box}
 body{margin:0;background:radial-gradient(circle at 70% -15%,#4b261b,#0a0b12 50%);font:500 16px system-ui;color:#fff;min-height:100dvh}
 main{max-width:480px;margin:auto;padding:22px 14px 32px}header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -15,7 +15,7 @@ input{width:100%;border:1px solid #4c5363;border-radius:12px;padding:14px;backgr
 #touch{height:170px;border:1px dashed #946035;border-radius:16px;background:radial-gradient(circle,#312319,#11141d 75%);display:grid;place-items:center;color:#cfaa88;user-select:none;touch-action:none}
 .hint{font-size:12px;color:#a5adbe;line-height:1.5;margin-top:9px}#toast{font-size:12px;min-height:18px;color:#fec38b;margin-top:12px}footer{font-size:11px;color:#7c8492;text-align:center;padding:20px}
 </style></head><body><main>
-<header><div><small>CONTROLE LOCAL • WI-FI / ADB</small><h1>CREATIVE<span>SCREEN</span></h1></div><div id="status">Conectando</div></header>
+<header><div><small>CONTROLE LOCAL • WI-FI / ADB</small><h1>MOTION<span>LAUCHER</span></h1></div><div id="status">Conectando</div></header>
 <section><h2>Controle remoto</h2><div class="row"><button data-action="home">⌂ Início</button><button data-action="back">↶ Voltar</button><button data-action="menu">☷ Menu</button></div>
 <div class="pad"><div></div><button data-action="up">↑</button><div></div><button data-action="left">←</button><button class="ok" data-action="ok">OK</button><button data-action="right">→</button><div></div><button data-action="down">↓</button><div></div></div>
 <div class="row"><button data-action="volumeDown">− Vol</button><button data-action="mute">× Mudo</button><button data-action="volumeUp">+ Vol</button></div>
@@ -25,7 +25,7 @@ input{width:100%;border:1px solid #4c5363;border-radius:12px;padding:14px;backgr
 <section><h2>Touchpad experimental</h2><div id="touch">Toque ou arraste aqui</div>
 <div class="hint">Simula toques e gestos via ADB. Cursor de mouse real será feito por HID Bluetooth ou receptor compatível.</div></section>
 <section><h2>Conexão</h2><div class="row"><button id="reconnect">⟳ Verificar conexão</button></div><div id="toast"></div></section>
-<footer>CreativeScreen Remote • Sem servidor exposto à rede • Sem agente no projetor</footer></main>
+<footer>Motion Laucher Remoto • Sem servidor exposto à rede • Sem agente no projetor</footer></main>
 <script>
 const toast=document.getElementById('toast');
 function note(s){toast.textContent=s;setTimeout(function(){if(toast.textContent===s)toast.textContent=''},4500)}

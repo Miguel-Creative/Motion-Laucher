@@ -33,3 +33,15 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Node/Vite/PWA outputs
+node_modules/
+dist/
+.vite/
+coverage/
+.env
+.env.*
+!.env.example
+npm-debug.log*
+.DS_Store
+*.tsbuildinfo

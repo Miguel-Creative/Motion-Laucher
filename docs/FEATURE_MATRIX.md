@@ -1,22 +1,16 @@
-# CreativeScreen OS — funções previstas
-**Status:** bootstrap e migração concluídos; integração de funcionalidades em andamento.
+# Matriz de funcionalidades do Motion Laucher
 
-## Launcher
-- Home gamer com perfis Gamer / Cinema / Família / Minimal e widgets opcionais.
-- Papéis de parede: Jogos / Filmes / Séries / Misto / Meus arquivos. Favoritos, seleção por categoria, alternância por horário, modo offline, cache LRU e licenças verificadas.
-- Temas Obsidian/Amber, Cyber Neon, Retrô, OLED e customização por usuário.
-- Biblioteca de apps, atalhos, busca, HDMI, configurações, foco DPAD, acessibilidade e restauração da HOME original.
-- Perfis Lite / Balanced / Cinematic, efeitos desabilitáveis e limite de consumo por RAM.
+| Recurso | TV Preview | Android Nativo | MRL PWA |
+|---|---|---|---|
+| HOME 16:9 com wallpaper e favoritos | Implementado como demonstração | Base leve (UI gamer pendente) | Não se aplica |
+| Biblioteca, Jogos, Filmes, Séries, Animes | Simulação com imagens locais | Port pendente | Gerenciamento remoto em demonstração |
+| Animações e perfis de desempenho | Protótipo web | Port/benchmark pendente | Interface mobile própria |
+| Configurações avançadas (23 grupos) | Simulação persistida | Apenas ajustes da base existente | Subconjunto e painel de administração demo |
+| Wallpaper automático/categorias | Simulação web | Motor simples legado; integração pendente | Personalização demo |
+| Controle direcional/volume/mídia | Controle físico por DPAD no navegador | Sistema Android | Demonstração em tela mobile |
+| Teclado Unicode/mouse HID | Não se aplica | A integrar | UI demo; requer bridge e IME real |
+| Inventário, arquivos, instalação de APK | Não se aplica | Admin externo com ADB autorizado | UI demo sem ações reais |
+| Cache offline | Opcional estático | Native Android | Worker PWA gerado no build |
+| Independência de VPS | Sim | Sim | Sim |
 
-## Controle do celular
-- Controle remoto D-pad, mídia e volume; teclado PT-BR via IME nativo opcional; mouse HID Bluetooth onde suportado; touchpad e gestos ADB como fallback.
-- Pareamento Wi-Fi/ADB ou protocolo TV Remote v2, sem root e sem exposição à Internet.
-- Gerenciamento de apps, arquivos, permissões, notificações, logs, macros e perfis.
-- Validação de comandos, confirmação para ações destrutivas e reversão.
-
-## Gestão nativa
-- Inventário de aplicativos, CPU, GPU, RAM/ZRAM, armazenamento, processos, rede, temperatura e segurança.
-- Desativação reversível, snapshots, backup, instalação de APK e rollback.
-- Atualizações assinadas e preservação dos componentes essenciais.
-
-**Critério:** recurso só passa a concluído quando compilado, testado e medido em aparelho real. Compactar APK não garante consumo menor de RAM.
+Um recurso só é considerado plenamente integrado após build, teste no dispositivo e validação de comportamento. O código-fonte externo em submódulo **não equivale a uma integração funcional**.
