@@ -1,53 +1,74 @@
-# Motion Laucher — Catálogos reais e atualização automática
+# Motion Laucher — seleção dinâmica de wallpapers reais
 
-O Motion Laucher usa a Cloudflare como **ponte de metadados e imagens**, sem VPS. A implementação está em `apps/catalog-worker/index.ts`, e a interface usa o endpoint `/api/catalog`. As imagens são exibidas diretamente das URLs oficiais retornadas pelos provedores, sem empacotar os catálogos no APK.
+O launcher busca títulos, notas, datas de estreia e imagens nos serviços de origem. A versão web utiliza **Cloudflare Workers**, com endpoint `/api/catalog`, e não precisa de VPS. O frontend permite escolher o critério editorial em **Estúdio de Wallpapers**.
 
-| Categoria | Origem | Credenciais | Atualização |
-|---|---|---|---|
-| Filmes | TMDB — tendências da semana | `TMDB_READ_TOKEN` | A cada expiração do cache (até 6 horas) |
-| Séries | TMDB — tendências da semana | `TMDB_READ_TOKEN` | Idem |
-| Jogos | RAWG — jogos populares | `RAWG_API_KEY` | Idem |
-| Animes | AniList; Kitsu como alternativa | Sem credenciais de leitura pública | Idem |
+## Critérios disponíveis
 
-O Worker prioriza AniList, mas seus servidores podem recusar conexões da Cloudflare (HTTP 403); nesse caso consulta o **Kitsu**, que retorna títulos e imagens reais. Não usar Jikan público como alternativa: sua API pública foi descontinuada em outubro de 2026.
+| Filtro na interface | Filmes (TMDB) | Séries (TMDB) | Jogos (RAWG) | Animes (Kitsu/AniList) |
+|---|---|---|---|---|
+| Destaques (padrão) | Tendências + próximos filmes + melhores recentes | Tendências + séries futuras + bem avaliadas + em exibição | Próximos + jogos recentes + notas + franquias de interesse | Novas temporadas identificáveis + próximos + bem avaliados do ano + atuais |
+| Em alta | Trending da semana | Trending da semana | Popularidade dos últimos 15 meses | Exibições recentes / popularidade |
+| Em breve | Movie upcoming (BR) | Discover TV: primeira exibição futura | Datas entre hoje e próximos 18 meses | Status **upcoming**, priorizando interesse do público |
+| Mais bem avaliados | Discover de últimos 36 meses, votos suficientes e nota alta | Mesmo critério | Metacritic 80+ de até 36 meses atrás | Melhores avaliados do ano atual, por `filter[seasonYear]` |
+| Novas temporadas | — | Séries em exibição com detalhes de episódio recente/próximo em temporada 2+ | — | Estreias marcadas explicitamente como Season 2, 3rd Season, Part 2 etc. |
 
-## Ativar Filmes, Séries e Jogos na conta Cloudflare
-1. Entre no [TMDB](https://www.themoviedb.org/) e crie uma conta, se necessário.
-2. Em Configurações de conta → API, solicite uma chave para uso **não comercial** e copie o **API Read Access Token**.
-3. Entre no [RAWG](https://rawg.io/apidocs) e obtenha uma chave de API gratuita, observando termos e limites.
-4. No painel Cloudflare, abra **Workers & Pages → motion-laucher → Settings → Variables and Secrets**. Adicione os valores como **Secrets**, não como variáveis públicas.
-   - `TMDB_READ_TOKEN` = token de leitura do TMDB.
-   - `RAWG_API_KEY` = chave pessoal do RAWG.
-5. Reimplante o Worker, se necessário. Teste:
-   - `https://motion-laucher.contato-creativezone.workers.dev/api/catalog?kind=Filmes`
-   - `https://motion-laucher.contato-creativezone.workers.dev/api/catalog?kind=S%C3%A9ries`
-   - `https://motion-laucher.contato-creativezone.workers.dev/api/catalog?kind=Jogos`
-   - `https://motion-laucher.contato-creativezone.workers.dev/api/catalog?kind=Animes`
+**Critérios são consultas dinâmicas, não uma lista estática de nomes.** Datas de hoje são calculadas pelo Worker; lançamentos mudam conforme os provedores atualizam seus registros. O Kitsu foi testado contra registros atuais de estreias e notas. A API do AniList continua como reserva, pois conexões da Cloudflare podem receber HTTP 403.
 
-**Nunca compartilhe as chaves neste chat, no GitHub ou em um arquivo do frontend.** O Worker as utiliza internamente; a interface recebe apenas os dados normalizados e URLs de imagens.
+**Exemplos de franquias acompanhadas nos jogos:** buscas direcionadas a *Grand Theft Auto VI* e *Assassin's Creed* ajudam a achar artes/entradas recentes, quando o RAWG as disponibilizar. Não substituímos datas verificadas por suposições e não mostramos títulos inventados caso a busca não tenha retorno válido.
 
-### Imagens alternativas
+## Fontes de imagens
 
-Para filmes/séries e jogos é possível abrir o detalhe no Estúdio de Wallpapers: o Worker consulta imagens oficiais alternativas do título selecionado **sob demanda**, sem baixar todos os arquivos de uma vez.
+- **TMDB:** `backdrop_path` (imagens horizontais, priorizadas), `poster_path` (alternativas) e `/{movie|tv}/{id}/images` ao abrir a galeria do título.
+- **RAWG:** `background_image` e `/games/{id}/screenshots` sob demanda.
+- **SteamGridDB (opcional):** `search/autocomplete` + `heroes/game/{id}`. Priorizamos imagens horizontais e buscamos até seis alternativas apenas quando o usuário abre o jogo. A escolha exige correspondência do nome, evitando associar artes ao jogo errado.
+- **Kitsu/AniList:** capas e banners fornecidos nos registros, priorizando imagem horizontal quando existir. Algumas séries só disponibilizam cartaz vertical: não classificá-lo falsamente como wallpaper widescreen.
 
-### Atualização automática
+## Credenciais na Cloudflare
 
-As listas são consultadas ao abrir o launcher e atualizadas periodicamente com a interface aberta. O Worker possui cache de até **6 horas** para reduzir requisições e custos; após a expiração, passa a apresentar os destaques fornecidos pela API naquele momento. A troca automática de wallpaper segue o intervalo que o usuário escolher e não depende da recompilação do APK.
+No dashboard, em **Workers & Pages → motion-laucher → Settings → Variables and Secrets**, salve como **Secrets**, nunca no frontend público ou no GitHub:
 
-**Limites:** a versão atual integra os catálogos com a prévia web. Para ter esses wallpapers no **launcher Android nativo**, ainda será necessário portar o módulo de consulta e cache para Android. A prévia também mantém as artes antigas marcadas como demonstração se nenhum catálogo real estiver disponível. Não há garantia de tradução para pt-BR de todos os títulos ou de várias imagens por item.
+- `TMDB_READ_TOKEN`: token de leitura do TMDB, para filmes e séries.
+- `RAWG_API_KEY`: chave da API RAWG, para jogos.
+- `STEAMGRIDDB_API_KEY` (opcional): API do SteamGridDB, apenas para ampliar as opções de imagens de jogos.
 
-### Créditos e licenciamento
+Animes pelo Kitsu podem funcionar sem credenciais. Não colocar chaves em campos de `VITE_*`, URL de acesso público ou arquivos `.env` commitados.
 
-- [TMDB](https://developer.themoviedb.org/docs/faq): atribuição obrigatória e uso gratuito não comercial; exibir créditos oficiais na interface.
-- [RAWG](https://rawg.io/apidocs): atribuição com link ativo em telas que usam seus dados; respeitar limites.
-- [AniList](https://docs.anilist.co/guide/terms-of-use): termos e limite de chamadas; não replicar a base em massa.
-- [Kitsu](https://kitsu.docs.apiary.io/): créditos e condições de uso do serviço.
-- Imagens de jogos, filmes, séries e animes podem ter direitos de seus respectivos titulares. Gratuidade e código aberto do launcher **não significam que essas imagens sejam de domínio público**; manter os termos e acesso conforme cada provedor autoriza.
+## Endpoints para testar (quando a nova versão for publicada)
 
-### Ícones de aplicativos Android
+- `/api/catalog?kind=Animes&feed=em-breve`
+- `/api/catalog?kind=Animes&feed=novas-temporadas`
+- `/api/catalog?kind=Animes&feed=melhores`
+- `/api/catalog?kind=Filmes&feed=em-breve`
+- `/api/catalog?kind=S%C3%A9ries&feed=novas-temporadas`
+- `/api/catalog?kind=Jogos&feed=em-breve`
+- `/api/catalog?kind=Jogos&feed=destaques`
+- `/api/catalog?kind=Jogos&imageId=rawg-<id>` (substituir pelo ID retornado pela API)
 
-O APK nativo utiliza `PackageManager.getInstalledApplications`, `getApplicationLabel` e `getApplicationIcon`, carregando os nomes e ícones reais dos apps instalados. A prévia web possui ícones genéricos de demonstração porque um navegador não pode consultar diretamente os aplicativos instalados no projetor.
+O cache do Worker expira em até **seis horas**. A interface atualiza a lista ao abrir e periodicamente enquanto estiver ativa. **A rotação automática de wallpapers** é um ajuste separado e não força consultas a cada transição.
 
-### Observação de segurança
+## Repositórios GitHub úteis avaliados
 
-A busca de credenciais no navegador existente em algumas telas herdadas do protótipo será substituída pela gestão no painel Cloudflare ou em configurações seguras nativas. O sistema de catálogo vivo **não lê chaves do localStorage**; não cole tokens privados nos campos de texto da prévia.
+- [SteamGridDB/node-steamgriddb](https://github.com/SteamGridDB/node-steamgriddb) — wrapper JavaScript oficial do SteamGridDB, licença MIT; útil para possível integração futura mais profunda.
+- [SteamGridDB/decky-steamgriddb](https://github.com/SteamGridDB/decky-steamgriddb) — exemplo de fluxo de seleção/aplicação de artes; licença não claramente identificada pelo GitHub, **não copiar código** sem revisão.
+- [twitchtv/igdb-api-node](https://github.com/twitchtv/igdb-api-node) — cliente IGDB para rankings de jogos e lançamentos, MIT; a API exige OAuth Twitch, por isso não é necessária nesta primeira fase.
+- [tanukiapp/tanuki-app](https://github.com/tanukiapp/tanuki-app) — calendário semanal de anime baseado em Kitsu; GPL-3.0, utilizar como referência e preservar os termos se algum código for reutilizado.
+- [KangieDanie/AniCalendar](https://github.com/KangieDanie/AniCalendar) — interface de calendário/histórico de anime, MIT; referência de UX, não uma fonte oficial de imagens.
+
+Os projetos externos acima **não foram incorporados integralmente**. Usamos REST/GraphQL oficiais sem depender de bancos de dados comunitários sem manutenção.
+
+## Direitos e atribuições
+
+- O Motion Laucher é gratuito e aberto, **mas as artes oficiais e os posters não se tornam domínio público**.
+- Sempre apresentar a fonte e créditos relevantes (TMDB, RAWG, SteamGridDB, Kitsu/AniList), obedecer às políticas de exibição e não redistribuir arquivos de terceiros no GitHub.
+- O uso da API TMDB requer atribuição e as condições de uso permitidas pelo serviço. RAWG exige link de retorno visível nos locais onde seus dados são usados.
+- Dados de ranking são indicadores das plataformas; "popular" não é sinônimo de alta avaliação. Novas temporadas são rotuladas apenas quando existem sinais explícitos de sequência/temporada, não pela simples idade da série.
+- A API e a interface web estão separadas do APK Android. A integração de wallpapers e cache no **launcher nativo** permanece uma etapa posterior, com monitoramento de RAM e cache adequado ao projetor.
+
+## Fontes técnicas
+
+- [TMDB API](https://developer.themoviedb.org/docs/getting-started), [popularidade/trending](https://developer.themoviedb.org/docs/popularity-and-trending)
+- [RAWG API](https://rawg.io/apidocs)
+- [AniList media](https://docs.anilist.co/reference/object/media)
+- [Kitsu JSON:API](https://hummingbird-me.github.io/api-docs/)
+- [IGDB API](https://api-docs.igdb.com/)
+- [SteamGridDB API](https://www.steamgriddb.com/api/v2)
