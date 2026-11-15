@@ -18,7 +18,15 @@ export type EditorialFeed=typeof FEED_OPTIONS[number]["id"];
 const FEED_KEY="motion-laucher:editorial-feed";
 let selectedFeed:EditorialFeed="destaques";
 let requestVersion=0;
-export const getSelectedFeed=()=>selectedFeed;
+export const getSelectedFeed=()=>{
+ if(typeof window!=="undefined"){
+  try{
+   const saved=window.localStorage.getItem(FEED_KEY);
+   if(FEED_OPTIONS.some(o=>o.id===saved))selectedFeed=saved as EditorialFeed;
+  }catch{}
+ }
+ return selectedFeed;
+};
 export function setSelectedFeed(next:EditorialFeed){
  if(selectedFeed===next)return;
  selectedFeed=next;
