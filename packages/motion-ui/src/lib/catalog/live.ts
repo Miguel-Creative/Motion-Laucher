@@ -7,10 +7,28 @@ import type { Wallpaper, WallpaperKind, ArtVariant } from "@/data/wallpapers";
 import { getState, setState } from "@/lib/store";
 
 const kinds = ["Animes","Filmes","Séries","Jogos"] as const;
+export const FEED_OPTIONS = [
+ {id:"destaques",label:"Destaques"},
+ {id:"em-alta",label:"Em alta"},
+ {id:"em-breve",label:"Em breve"},
+ {id:"melhores",label:"Mais bem avaliados"},
+ {id:"novas-temporadas",label:"Novas temporadas"}
+] as const;
+export type EditorialFeed=typeof FEED_OPTIONS[number]["id"];
+const FEED_KEY="motion-laucher:editorial-feed";
+let selectedFeed:EditorialFeed="destaques";
+let requestVersion=0;
+export const getSelectedFeed=()=>selectedFeed;
+export function setSelectedFeed(next:EditorialFeed){
+ if(selectedFeed===next)return;
+ selectedFeed=next;
+ try{window.localStorage.setItem(FEED_KEY,next);}catch{}
+ void refreshLiveCatalog();
+}
 type KindRequest = typeof kinds[number];
-export type CatalogHealth = { loading:boolean; live:number; errors:Record<string,string>; updatedAt:number };
+export type CatalogHealth = { loading:boolean; live:number; errors:Record<string,string>; updatedAt:number; feed:EditorialFeed };
 let entries:Wallpaper[]=[];
-let health:CatalogHealth={loading:false,live:0,errors:{},updatedAt:0};
+let health:CatalogHealth={loading:false,live:0,errors:{},updatedAt:0,feed:"destaques"};
 const listeners=new Set<()=>void>();
 const notify=()=>listeners.forEach(l=>l());
 const subscribe=(l:()=>void)=>{listeners.add(l);return ()=>listeners.delete(l);};
@@ -40,21 +58,25 @@ export const useLiveCatalog=()=>useSyncExternalStore(subscribe,snap,()=>[]);
 export const useCatalogHealth=()=>useSyncExternalStore(subscribe,healthSnap,()=>health);
 export async function refreshLiveCatalog(){
  if(typeof window==="undefined")return;
- health={...health,loading:true};notify();
- const results=await Promise.all(kinds.map(async kind=>{
+ const version=++requestVersion;
+ const feed=selectedFeed;
+ health={...health,loading:true,feed};notify();
+ const activeKinds=feed==="novas-temporadas"?kinds.filter(k=>k==="Animes"||k==="Séries"):kinds;
+ const results=await Promise.all(activeKinds.map(async kind=>{
   try{
-   const res=await fetch("/api/catalog?kind="+encodeURIComponent(kind),{headers:{Accept:"application/json"}});
+   const res=await fetch("/api/catalog?kind="+encodeURIComponent(kind)+"&feed="+encodeURIComponent(feed),{headers:{Accept:"application/json"}});
    const data=await res.json();
    if(!res.ok)throw Error(String(data.error||"HTTP "+res.status));
    return {kind,items:(Array.isArray(data.items)?data.items:[]).map(normalize).filter(Boolean) as Wallpaper[],error:""};
   }catch(error){return {kind,items:[] as Wallpaper[],error:unavailable(error instanceof Error?error.message:"Fonte indisponível")};}
  }));
+ if(version!==requestVersion)return;
  const old=entries;
  const merged=results.flatMap(r=>r.items.length?r.items:old.filter(w=>w.kind===(r.kind==="Animes"?"Anime":r.kind)));
  const dedup=new Map(merged.map(x=>[x.id,x]));
  entries=[...dedup.values()];
  const errors:Record<string,string>=Object.fromEntries(results.filter(r=>r.error).map(r=>[r.kind,r.error]));
- health={loading:false,live:entries.length,errors,updatedAt:Date.now()};
+ health={loading:false,live:entries.length,errors,updatedAt:Date.now(),feed};
  notify();
  if(entries.length && /^[afsmg]-/.test(getState().currentWallpaper)){
   setState({currentWallpaper:entries[0].id});
@@ -65,6 +87,10 @@ export function startLiveCatalog(){
  if(typeof window==="undefined")return ()=>{};
  if(started)return ()=>{};
  started=true;
+ try{
+  const saved=window.localStorage.getItem(FEED_KEY);
+  if(FEED_OPTIONS.some(o=>o.id===saved))selectedFeed=saved as EditorialFeed;
+ }catch{}
  void refreshLiveCatalog();
  const timer=window.setInterval(()=>{if(document.visibilityState==="visible")void refreshLiveCatalog();},60*60*1000);
  const online=()=>void refreshLiveCatalog();
