@@ -16,7 +16,7 @@ Selecione **GitHub**, autorize a instalação do Cloudflare Workers and Pages se
 | Repositório | `Miguel-Creative/Motion-Laucher` |
 | Branch de produção | `main` |
 | Framework preset | `None` (ou Vite, com os campos sobrescritos) |
-| Diretório raiz (Root directory) | **`/` (repositório inteiro)** |
+| Diretório raiz (Root directory) | **deixar vazio** (usa a raiz do repositório; se a interface mostrar `/`, isso também representa a raiz) |
 | Build command | `pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false && pnpm run build:tv` |
 | Output directory | **`dist/tv-preview`** |
 | Variáveis de ambiente de Build | `NODE_VERSION=22.16.0`, `PNPM_VERSION=10.11.1`, **`SKIP_DEPENDENCY_INSTALL=1`** |
