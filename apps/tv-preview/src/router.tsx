@@ -5,6 +5,7 @@ import { ProjectorSvgDefs } from "@/components/system/ProjectorSvgDefs";
 import { WallpaperRotation } from "@/components/system/WallpaperRotation";
 import { Toaster } from "@/components/ui/sonner";
 import { initializeStore } from "@/lib/store";
+import { startLiveCatalog } from "@/lib/catalog/live";
 import { TVHome } from "@/components/studio/TVHome";
 import { LibraryPage } from "@/components/studio/LibraryPage";
 import { WallpaperPage } from "@/components/studio/WallpaperPage";
@@ -12,7 +13,7 @@ import { SettingsPage } from "@/components/studio/SettingsPage";
 import { WelcomePage, RecoveryPage } from "@/components/studio/WelcomePage";
 
 function TVLayout() {
- useEffect(() => { initializeStore(); }, []);
+ useEffect(() => { const stopStore=initializeStore(); const stopCatalog=startLiveCatalog(); return ()=>{stopStore?.();stopCatalog();}; }, []);
  return <ThemeApplier><ProjectorSvgDefs/><WallpaperRotation/><Outlet/><Toaster position="bottom-right"/></ThemeApplier>;
 }
 const rootRoute = createRootRoute({ component: TVLayout, notFoundComponent: () => <div className="min-h-screen bg-background p-8 text-foreground">Página não encontrada. <a href="/">Voltar ao início</a></div> });
