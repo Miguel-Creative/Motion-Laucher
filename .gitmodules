@@ -1,0 +1,27 @@
+[submodule "upstream/launcher-plume"]
+	path = upstream/launcher-plume
+	url = https://github.com/aradhyas8/Plume_Launcher.git
+[submodule "upstream/launcher-glass"]
+	path = upstream/launcher-glass
+	url = https://github.com/B0redDev/glass-launcher.git
+[submodule "upstream/launcher-tv-home"]
+	path = upstream/launcher-tv-home
+	url = https://github.com/Deepu-mohan/tv-home-launcher.git
+[submodule "upstream/remote-adb"]
+	path = upstream/remote-adb
+	url = https://github.com/joonshakya/adb-remote.git
+[submodule "upstream/remote-bluetooth-hid"]
+	path = upstream/remote-bluetooth-hid
+	url = https://github.com/jqssun/android-bt-remote.git
+[submodule "upstream/remote-android-tv-v2"]
+	path = upstream/remote-android-tv-v2
+	url = https://github.com/soupfly/AltRemote.git
+[submodule "upstream/remote-webmote"]
+	path = upstream/remote-webmote
+	url = https://github.com/maxhayim/webmote.git
+[submodule "upstream/remote-web-ui"]
+	path = upstream/remote-web-ui
+	url = https://github.com/Legvan/tv-remote.git
+[submodule "upstream/research-tvtoolspro"]
+	path = upstream/research-tvtoolspro
+	url = https://github.com/deekshith0509/TvToolsPro.git
