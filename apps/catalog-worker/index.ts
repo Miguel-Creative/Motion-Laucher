@@ -30,7 +30,7 @@ function settled<T>(values:PromiseSettledResult<T>[],index:number,fallback:T):T{
  return values[index]?.status==="fulfilled"?(values[index] as PromiseFulfilledResult<T>).value:fallback;
 }
 
-const sources:Record<string,Kind>={filmes:"Filmes",series:"Séries",jogos:"Jogos",animes:"Anime"};
+const sources:Record<string,Kind>={filmes:"Filmes",series:"Séries",séries:"Séries",jogos:"Jogos",animes:"Anime",anime:"Anime"};
 const img=(p:any,size="w1280")=>typeof p==="string"&&/^\/[a-zA-Z0-9/_\-.]+$/.test(p)?"https://image.tmdb.org/t/p/"+size+p:null;
 const response=(data:unknown,status=200,cache=false)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","X-Content-Type-Options":"nosniff","Cache-Control":cache?"public,max-age=300,s-maxage=21600":"no-store"}});
 async function json(url:string,init:RequestInit={}):Promise<any>{
