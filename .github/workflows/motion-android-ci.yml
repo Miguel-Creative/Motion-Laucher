@@ -24,9 +24,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-audit --no-fund
-      - run: npm run typecheck && npm test -- --run
-      - run: npm run build:tv
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '10'
+      - run: pnpm install --no-frozen-lockfile --config.strict-peer-dependencies=false
+      - run: pnpm run typecheck && pnpm run test
+      - run: pnpm run build:tv
       - run: node apps/motion-android/scripts/prepare-snapshot.cjs
       - uses: actions/setup-java@v4
         with:
