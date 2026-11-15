@@ -13,19 +13,22 @@ declare global {
   interface Window { MotionNative?: MotionNativeBridge }
 }
 
-interface NativeEntry { pkg: string; name: string; system: boolean }
+interface NativeEntry { pkg: string; name: string; system: boolean; icon?: string }
+let cachedNativeApps: LauncherApp[] | null = null;
 export function isNativeLauncher(): boolean {
   return typeof window !== "undefined" && !!window.MotionNative?.isNative?.();
 }
 export function availableLauncherApps(): LauncherApp[] {
   if (!isNativeLauncher()) return APPS;
+  if (cachedNativeApps) return cachedNativeApps;
   try {
     const parsed: NativeEntry[] = JSON.parse(window.MotionNative!.getInstalledApps());
-    return parsed.filter(item => item.pkg && item.name).map((item, i) => {
+    const resolved = parsed.filter(item => item.pkg && item.name).map((item, i) => {
       const known = APPS.find(a => a.pkg === item.pkg);
-      return known ? { ...known, name: item.name } : {
+      return known ? { ...known, name: item.name, nativeIcon: item.icon } : {
         id: "native:" + item.pkg,
         name: item.name,
+        nativeIcon: item.icon,
         pkg: item.pkg,
         category: item.system ? "Sistema" as const : "Utilitários" as const,
         system: !!item.system,
@@ -35,6 +38,8 @@ export function availableLauncherApps(): LauncherApp[] {
         version: "",
       };
     }).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+    cachedNativeApps = resolved;
+    return resolved;
   } catch { return []; }
 }
 export function launchNativeApp(id: string): boolean {

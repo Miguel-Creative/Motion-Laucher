@@ -12,6 +12,7 @@ export interface LauncherApp {
   category: AppCategory;
   system: boolean;
   icon: LucideIcon;
+  nativeIcon?: string;
   /** index into the art-tone palette used for the tile gradient */
   tone: number;
   sizeMb: number;

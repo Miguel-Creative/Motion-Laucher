@@ -1,0 +1,172 @@
+
+/* TV FIT v2: one physical 16:9 frame in browsers and Android WebView 83.
+ * Do not let the mobile breakpoint turn the TV navigation into a second row.
+ * Keep all favorite applications visible without scrolling the launcher.
+ */
+.tv-home {
+  position:relative; display:flex; flex-direction:column;
+  width:100%; height:100vh!important; min-height:0!important;
+  overflow:hidden!important; box-sizing:border-box;
+}
+.tv-home .tv-scene {
+  position:absolute!important; inset:0!important;
+  z-index:0!important; width:100%!important; height:100%!important;
+  overflow:hidden; pointer-events:none;
+}
+.tv-home .tv-scene .smart-artwork {width:100%;height:100%;}
+.tv-home .tv-scene .smart-artwork-primary {width:100%;height:100%;opacity:1;}
+.tv-home .tv-scene .smart-artwork--composite .smart-artwork-primary {
+  object-fit:contain!important; object-position:center!important;
+}
+.tv-home .tv-local-scrim {
+  background:linear-gradient(90deg,rgba(4,9,17,.75) 0%,rgba(5,11,18,.43) 36%,rgba(6,13,19,.07) 77%,transparent 100%)!important;
+}
+.tv-home .tv-bottom-fade {height:165px;background:linear-gradient(0deg,rgba(8,11,16,.87),transparent);}
+.tv-home .tv-header, .studio-header {
+  position:relative; z-index:2;
+  display:flex!important; flex-wrap:nowrap!important;
+  align-items:center!important; justify-content:space-between!important;
+  box-sizing:border-box; height:66px!important; min-height:66px;
+  padding:0 24px!important; gap:0!important;
+}
+.tv-home .tv-header {flex:0 0 66px;}
+.tv-header .tv-brand-link,.studio-header > a {
+  display:inline-flex!important; align-items:center!important;
+  flex:none!important; white-space:nowrap;
+  text-decoration:none!important; color:#fff!important;
+  min-width:0; max-width:28%;
+}
+.tv-header .motion-brand-mascot,.studio-header .motion-brand-mascot {
+  width:36px!important;height:36px!important;
+}
+.tv-header .tv-brand-link .font-display,.studio-header > a .font-display {
+  font-size:17px!important; white-space:nowrap;
+}
+.tv-home .tv-header nav,.studio-header nav {
+  display:flex!important; align-items:center!important; justify-content:center!important;
+  position:absolute!important; top:8px!important;
+  left:50%!important; transform:translateX(-50%)!important;
+  width:auto!important; max-width:57%!important; height:50px;
+  order:0!important; flex:none!important; flex-wrap:nowrap!important;
+  margin:0!important; padding:3px 8px!important;
+  white-space:nowrap!important;
+  background:rgba(11,13,20,.77)!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:12px!important; box-sizing:border-box;
+}
+.tv-home .tv-header nav > *,.studio-header nav > * {
+  display:inline-flex!important; flex:none!important; width:auto!important;
+  min-width:0!important; height:42px!important;
+  padding:0 10px!important; margin:0!important;
+  font-size:13px!important; line-height:1!important;
+  white-space:nowrap!important; border-radius:8px!important;
+  text-decoration:none!important; background:transparent;
+  align-items:center!important;justify-content:center!important;
+}
+.tv-home .tv-header nav > * + *,.studio-header nav > * + * {margin-left:4px!important;}
+.tv-home .tv-header nav svg,.studio-header nav svg {width:17px;height:17px;flex:none;margin-right:6px;}
+.tv-home .tv-header .tv-clock {
+  flex:none; margin-left:auto; width:88px; white-space:nowrap;
+  text-align:right; color:white; position:relative; z-index:2;
+}
+.tv-home .tv-header .tv-clock strong {
+  font-size:22px!important; line-height:1.15; display:block;
+}
+.tv-home .tv-header .tv-clock small {display:block;font-size:9px;opacity:.85;}
+.tv-home .tv-main {
+  position:relative; z-index:1; display:flex; flex:1 1 auto;
+  flex-direction:column; min-height:0!important; overflow:hidden;
+  justify-content:space-between;
+}
+.tv-home .tv-hero {
+  display:flex; align-items:flex-start;
+  flex:1 1 0!important; min-height:0!important; height:auto!important;
+  margin:0; padding:14px 30px 0!important;
+  box-sizing:border-box; overflow:hidden;
+}
+.tv-home .hero-copy {
+  width:52%; max-width:520px; min-width:0; margin:0!important;
+  text-align:left!important; color:white;
+}
+.tv-home .hero-meta {display:flex; align-items:center; font-size:10px; white-space:nowrap;}
+.tv-home .hero-meta > * + * {margin-left:9px;}
+.tv-home .hero-category {
+  display:flex;align-items:center; color:#ffae42; font-size:12px;
+  margin:12px 0 6px!important; font-weight:600;
+}
+.tv-home .hero-category svg {margin-right:7px;}
+.tv-home .hero-title {
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  font-size:clamp(23px,3vw,40px)!important; line-height:1.11!important;
+  margin:5px 0 9px!important; max-height:2.26em;
+  max-width:100%; color:white!important;
+  overflow:hidden; text-overflow:ellipsis; overflow-wrap:break-word;
+  text-shadow:0 2px 16px rgba(0,0,0,.8);
+}
+.tv-home .hero-details {
+  max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  font-size:12px; margin:0 0 14px!important; color:#f7f9fc;
+}
+.tv-home .hero-details span {margin-left:7px;}
+.tv-home .tv-personalize {
+  display:inline-flex!important; align-items:center; justify-content:center;
+  height:40px!important; min-width:168px; padding:0 14px;
+  text-decoration:none!important; font-size:14px!important;
+  background:#ffa629!important;color:#201205!important;
+  border-radius:7px;
+}
+.tv-home .tv-personalize svg {margin-right:8px;}
+.tv-home .tv-wallpaper-pager {
+  display:flex;align-items:center; height:33px; margin-top:6px;
+  font-size:11px;color:white;
+}
+.tv-home .tv-wallpaper-pager button {height:31px;width:31px;padding:3px;}
+.tv-home .tv-wallpaper-pager .tv-wallpaper-progress {
+  height:2px;width:45px;background:#ffaa37;margin-left:14px;
+}
+.tv-home .tv-content {
+  display:block; box-sizing:border-box;
+  position:relative; z-index:1;
+  height:140px!important; flex:0 0 140px!important;
+  margin:0!important; padding:0 30px 8px!important;
+  overflow:hidden!important;
+}
+.tv-home .rail-heading {height:30px;margin:0!important;display:flex;align-items:center;justify-content:space-between;}
+.tv-home .rail-heading h2 {font-size:17px!important;line-height:1.1;}
+.tv-home .rail-heading a {font-size:12px;text-decoration:none;}
+.tv-home .favorite-row {
+  height:101px!important; box-sizing:border-box;
+  display:flex!important; flex-wrap:nowrap!important;
+  overflow:hidden!important; align-items:stretch;
+  gap:0!important; padding:3px 0 4px!important;
+}
+.tv-home .favorite-row > * + * {margin-left:12px;}
+.tv-home .favorite-row .app-tile {
+  flex:0 0 118px!important; width:118px!important; min-width:118px!important;
+  height:94px!important; max-height:94px!important; box-sizing:border-box;
+  display:flex!important; flex-direction:column; align-items:center;justify-content:center;
+  border-radius:11px!important; overflow:hidden; text-align:center;
+  padding:8px!important; font-size:12px!important; line-height:1.2;
+  color:#fff!important; background:rgba(18,22,32,.75)!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+}
+.tv-home .app-tile .app-icon {height:37px;width:37px;flex:none;margin-bottom:5px;}
+.tv-home .favorite-row .app-original-icon {width:46px!important;height:46px!important;object-fit:contain!important;flex:none;margin-bottom:5px;}
+.tv-home .app-tile span {display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tv-home .app-tile-add {background:rgba(12,17,25,.38)!important;}
+.library-icon-native {background:rgba(20,25,36,.65)!important;border:1px solid rgba(255,255,255,.10);}
+.library-icon-native .app-original-icon {object-fit:contain;width:52px;height:52px;max-width:100%;}
+.studio-header {background:rgba(9,13,21,.90);min-width:0;}
+.studio-header + main {position:relative;z-index:1;}
+/* Reduce title slightly on constrained WebView CSS viewports. */
+@media (max-height:540px) {
+ .tv-home .tv-header {height:58px!important;min-height:58px;flex-basis:58px;}
+ .tv-home .tv-header nav {height:46px;top:6px!important;}
+ .tv-home .tv-hero {padding-top:8px!important;}
+ .tv-home .hero-category {margin:9px 0 5px!important;}
+ .tv-home .hero-title {font-size:clamp(22px,3vw,32px)!important;}
+ .tv-home .hero-details {margin-bottom:10px!important;}
+ .tv-home .tv-content {height:125px!important;flex-basis:125px!important;}
+ .tv-home .favorite-row {height:88px!important;}
+ .tv-home .favorite-row .app-tile {height:83px!important;max-height:83px!important;}
+}

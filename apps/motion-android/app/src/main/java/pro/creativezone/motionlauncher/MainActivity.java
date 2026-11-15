@@ -5,6 +5,11 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import android.util.Base64;
+import java.io.ByteArrayOutputStream;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -34,6 +39,7 @@ public class MainActivity extends Activity {
     private static final String LIVE_URL = "https://" + LIVE_HOST + "/";
     private WebView web;
     private boolean inOfflineMode = false;
+    private volatile String cachedAppsJson;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -117,6 +123,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface public boolean isNative() { return true; }
 
         @JavascriptInterface public String getInstalledApps() {
+            if (cachedAppsJson != null) return cachedAppsJson;
             JSONArray apps = new JSONArray();
             PackageManager pm = getPackageManager();
             List<ApplicationInfo> installed = pm.getInstalledApplications(0);
@@ -131,10 +138,24 @@ public class MainActivity extends Activity {
                     item.put("pkg", app.packageName);
                     item.put("name", pm.getApplicationLabel(app).toString());
                     item.put("system", (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0);
+                    try {
+                        Drawable icon = pm.getApplicationIcon(app.packageName);
+                        Bitmap bitmap = Bitmap.createBitmap(72, 72, Bitmap.Config.ARGB_8888);
+                        Canvas canvas = new Canvas(bitmap);
+                        icon.setBounds(0, 0, 72, 72);
+                        icon.draw(canvas);
+                        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 95, bytes);
+                        item.put("icon", "data:image/png;base64," + Base64.encodeToString(bytes.toByteArray(), Base64.NO_WRAP));
+                        bitmap.recycle();
+                    } catch (Exception iconError) {
+                        Log.w("MotionUI", "Icon unavailable for " + app.packageName);
+                    }
                     apps.put(item);
                 } catch (Exception ignored) {}
             }
-            return apps.toString();
+            cachedAppsJson = apps.toString();
+            return cachedAppsJson;
         }
 
         @JavascriptInterface public void launchPackage(String pkg) {
