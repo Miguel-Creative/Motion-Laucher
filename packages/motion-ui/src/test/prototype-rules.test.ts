@@ -16,6 +16,12 @@ describe("Local prototype rules", () => {
  it("rotates only through selected categories", () => {setState({currentWallpaper:"a-sky",settings:{"wallpaper.mix":["Anime"],"wallpaper.order":"sequential"}});stepWallpaper(1);expect(DEMO_WALLPAPERS.find(w=>w.id===getState().currentWallpaper)?.kind).toBe("Anime");expect(getState().currentWallpaper).not.toBe("a-sky");});
  it("persists the wallpaper selection locally", () => {setState({currentWallpaper:"a-neon"});setState({currentWallpaper:"g-ember"});localStorage.setItem("motion-laucher:v1",JSON.stringify({...DEFAULT_STATE,currentWallpaper:"a-neon"}));const cleanup=initializeStore();expect(getState().currentWallpaper).toBe("a-neon");cleanup();});
  it("persists reversible demo app disablement", () => {setSetting("demo.disabledApps",["youtube"]);expect(readSetting("demo.disabledApps")).toEqual(["youtube"]);setSetting("demo.disabledApps",[]);expect(readSetting("demo.disabledApps")).toEqual([]);expect(JSON.parse(localStorage.getItem("motion-laucher:v1") ?? "{}").settings["demo.disabledApps"]).toEqual([]);});
+ it("rotates every 30 seconds by default",()=>{
+   const controls=SETTINGS_SECTIONS.find(s=>s.id==="wallpaper")!.items;
+   expect(controls.find(s=>s.id==="wallpaper.rotation")?.default).toBe("30s");
+   expect(SPEC_ROTATION_MS["30s"]).toBe(30_000);
+   expect(controls.find(s=>s.id==="wallpaper.customSeconds")?.min).toBe(10);
+ });
  it("daily rotation lasts 24 hours", () => {expect(SPEC_ROTATION_MS['daily']).toBe(86_400_000);});
  it("falls back safely for invalid art variant selection", () => {const wp=DEMO_WALLPAPERS[0];if(!wp)throw new Error("Missing test fixture");expect(wallpaperSrc(wp,"md",999).src).toBe(wallpaperSrc(wp,"md",0).src);});
 });

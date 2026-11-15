@@ -11,7 +11,7 @@ import { runSettingAction } from "@/lib/actions";
 const DESTINATIONS = ["/wallpapers", "/remote", "/recovery", "/welcome"] as const;
 export function SettingControl({ def }: { def: SettingDef }) {
  const value = useAppState(s=>readSetting<SettingValue>(def.id,s)); const navigate=useNavigate(); const [confirm,setConfirm]=useState(false);
- const implemented = def.type === "action" || def.id.startsWith("projector.") || ["appearance.theme", "appearance.accent", "motion.speed", "motion.focusEffect", "motion.reduce", "performance.visualMode", "performance.pauseHidden", "wallpaper.rotation", "wallpaper.customMinutes", "wallpaper.order", "wallpaper.mix", "wallpaper.pauseOnPlayback", "wallpaper.maxResolution", "profiles.active", "profiles.name", "privacy.history", "storage.uploadQuality", "storage.maxUploads", "input.pointerSpeed", "a11y.highContrast", "notify.duration"].includes(def.id);
+ const implemented = def.type === "action" || def.id.startsWith("projector.") || ["appearance.theme", "appearance.accent", "motion.speed", "motion.focusEffect", "motion.reduce", "performance.visualMode", "performance.pauseHidden", "wallpaper.rotation", "wallpaper.customSeconds", "wallpaper.order", "wallpaper.mix", "wallpaper.pauseOnPlayback", "wallpaper.maxResolution", "profiles.active", "profiles.name", "privacy.history", "storage.uploadQuality", "storage.maxUploads", "input.pointerSpeed", "a11y.highContrast", "notify.duration"].includes(def.id);
  const unsupported = def.availability === "ponte" || def.availability === "indisponivel" || def.secret;
  const update=(v:SettingValue)=>{setSetting(def.id,v);};
  const action=()=>void runSettingAction(def.action ?? "", to=>{const dest=DESTINATIONS.find(d=>d===to);if(dest)void navigate({to:dest});});

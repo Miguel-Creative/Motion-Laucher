@@ -23,10 +23,15 @@ object WallpaperManager {
     const val MODE_SOLID = "solid"
     const val MODE_ONLINE = "online"
     const val MODE_CUSTOM = "custom"
+    const val MODE_MOTION = "motion"
 
     // Backwards compatibility alias
     const val MODE_REDDIT = "online"
 
+    const val CATEGORY_MOTION_MIX = "motion-mix"
+    const val CATEGORY_MOTION_GAMES = "motion-games"
+    const val CATEGORY_MOTION_MOVIES = "motion-movies"
+    const val CATEGORY_MOTION_SERIES = "motion-series"
     const val CATEGORY_GENERAL = "wallpaper"
     const val CATEGORY_NATURE = "nature"
     const val CATEGORY_CARS = "cars"
@@ -34,6 +39,9 @@ object WallpaperManager {
     const val CATEGORY_SPACE = "space"
     const val CATEGORY_ARCHITECTURE = "city"
 
+    const val INTERVAL_30S = 30_000L
+    const val INTERVAL_1M = 60_000L
+    const val INTERVAL_5M = 300_000L
     const val INTERVAL_15M = 15 * 60 * 1000L
     const val INTERVAL_1H = 60 * 60 * 1000L
     const val INTERVAL_6H = 6 * 60 * 60 * 1000L
@@ -46,6 +54,8 @@ object WallpaperManager {
     private const val PREF_CUSTOM_URL = "wallpaper_custom_url"
     private const val PREF_DIM_OVERLAY = "wallpaper_dim_overlay"
     private const val PREF_LAST_FETCH_TIME = "wallpaper_last_fetch_time"
+    private const val PREF_MOTION_INDEX = "motion_wallpaper_index"
+    private const val MOTION_API = "https://motion-laucher.contato-creativezone.workers.dev/api/catalog?kind="
     private const val CACHE_FILE_NAME = "current_wallpaper.jpg"
     private const val MAX_REDIRECTS = 5
 
@@ -54,7 +64,7 @@ object WallpaperManager {
 
     fun getWallpaperMode(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val mode = prefs.getString(PREF_MODE, MODE_SOLID) ?: MODE_SOLID
+        val mode = prefs.getString(PREF_MODE, MODE_MOTION) ?: MODE_MOTION
         return if (mode == "reddit") MODE_ONLINE else mode
     }
 
@@ -66,7 +76,7 @@ object WallpaperManager {
 
     fun getCategory(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(PREF_CATEGORY, CATEGORY_NATURE) ?: CATEGORY_NATURE
+        return prefs.getString(PREF_CATEGORY, CATEGORY_MOTION_MIX) ?: CATEGORY_MOTION_MIX
     }
 
     fun setCategory(context: Context, category: String) {
@@ -76,12 +86,12 @@ object WallpaperManager {
 
     fun getInterval(context: Context): Long {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getLong(PREF_INTERVAL, INTERVAL_1H)
+        return prefs.getLong(PREF_INTERVAL, INTERVAL_30S).coerceIn(10_000L, INTERVAL_24H)
     }
 
     fun setInterval(context: Context, interval: Long) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putLong(PREF_INTERVAL, interval).apply()
+        prefs.edit().putLong(PREF_INTERVAL, interval.coerceIn(10_000L, INTERVAL_24H)).apply()
     }
 
     fun getCustomUrl(context: Context): String {
@@ -142,6 +152,7 @@ object WallpaperManager {
         executor.execute {
             val category = getCategory(context)
             val success = when (mode) {
+                MODE_MOTION -> fetchAndCacheMotionWallpaper(context, category)
                 MODE_ONLINE -> fetchAndCacheOnlineWallpaper(context, category)
                 MODE_CUSTOM -> {
                     val url = getCustomUrl(context)
@@ -159,6 +170,58 @@ object WallpaperManager {
                 mainHandler.post { onComplete(fallbackCached != null, fallbackCached) }
             }
         }
+    }
+
+    /** Real catalog through the Cloudflare Worker, never exposing third-party keys.
+     *  Reuse the small JSON feed for 6 hours instead of re-requesting every 30 seconds.
+     */
+    private fun motionKinds(category: String): List<String> = when (category) {
+        CATEGORY_MOTION_GAMES -> listOf("Jogos")
+        CATEGORY_MOTION_MOVIES -> listOf("Filmes")
+        CATEGORY_MOTION_SERIES -> listOf("Séries")
+        CATEGORY_ANIME -> listOf("Animes")
+        else -> listOf("Animes", "Filmes", "Séries", "Jogos")
+    }
+
+    private fun cachedMotionItems(context: Context, kind: String): org.json.JSONArray {
+        val file = File(context.cacheDir, "motion-catalog-" + kind + ".json")
+        if (!file.exists() || System.currentTimeMillis() - file.lastModified() > 6 * 3600_000L) {
+            try {
+                val encodedKind = java.net.URLEncoder.encode(kind, "UTF-8")
+                val conn = (URL(MOTION_API + encodedKind + "&feed=destaques").openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 7000
+                    readTimeout = 7000
+                }
+                try {
+                    if (conn.responseCode == 200) {
+                        val data = conn.inputStream.bufferedReader().use { it.readText() }
+                        if ((JSONObject(data).optJSONArray("items")?.length() ?: 0) > 0) file.writeText(data)
+                    }
+                } finally { conn.disconnect() }
+            } catch (_: Exception) { /* Keep last successful catalog when offline. */ }
+        }
+        return try { JSONObject(file.readText()).optJSONArray("items") ?: org.json.JSONArray() }
+            catch (_: Exception) { org.json.JSONArray() }
+    }
+
+    private fun fetchAndCacheMotionWallpaper(context: Context, category: String): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val kinds = motionKinds(category)
+        val index = prefs.getInt(PREF_MOTION_INDEX, 0).coerceAtLeast(0)
+        for (attempt in 0 until kinds.size * 4) {
+            val current = index + attempt
+            val kind = kinds[current % kinds.size]
+            val items = cachedMotionItems(context, kind)
+            if (items.length() < 1) continue
+            val item = items.optJSONObject((current / kinds.size) % items.length()) ?: continue
+            val image = item.optJSONArray("variants")?.optJSONObject(0)?.optString("src") ?: continue
+            if (!image.startsWith("https://")) continue
+            if (downloadAndCacheImage(context, image, true)) {
+                prefs.edit().putInt(PREF_MOTION_INDEX, current + 1).apply()
+                return true
+            }
+        }
+        return false
     }
 
     private fun fetchAndCacheOnlineWallpaper(context: Context, category: String): Boolean {
@@ -284,7 +347,7 @@ object WallpaperManager {
         }
     }
 
-    private fun downloadAndCacheImage(context: Context, imageUrl: String): Boolean {
+    private fun downloadAndCacheImage(context: Context, imageUrl: String, landscapeOnly: Boolean = false): Boolean {
         var currentUrl = imageUrl
         var redirects = 0
         while (redirects < MAX_REDIRECTS) {
@@ -328,9 +391,18 @@ object WallpaperManager {
                     }
                 }
 
-                if (!tempFile.exists() || tempFile.length() < 1024) {
+                if (!tempFile.exists() || tempFile.length() < 1024 || tempFile.length() > 8_000_000L) {
                     tempFile.delete()
                     return false
+                }
+                if (landscapeOnly) {
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeFile(tempFile.absolutePath, options)
+                    val ratio = if (options.outHeight > 0) options.outWidth.toFloat() / options.outHeight else 0f
+                    if (ratio < 1.55f || ratio > 2.10f) {
+                        tempFile.delete()
+                        return false
+                    }
                 }
 
                 val destFile = File(context.cacheDir, CACHE_FILE_NAME)

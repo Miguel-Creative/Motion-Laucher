@@ -6,6 +6,9 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.InputType
 import android.provider.Settings
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -34,6 +37,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appManager: AppManager
     private lateinit var appSlotAdapter: AppSlotAdapter
     private var lastFocusedPosition: Int = 0
+    private val wallpaperTimer = Handler(Looper.getMainLooper())
+    private val wallpaperTick = object : Runnable {
+        override fun run() {
+            if (!isFinishing && !isDestroyed && WallpaperManager.getWallpaperMode(this@MainActivity) != WallpaperManager.MODE_SOLID) {
+                applyWallpaper(force = false)
+            }
+            scheduleWallpaperRotation()
+        }
+    }
+    private fun scheduleWallpaperRotation() {
+        wallpaperTimer.removeCallbacks(wallpaperTick)
+        if (WallpaperManager.getWallpaperMode(this) != WallpaperManager.MODE_SOLID) {
+            wallpaperTimer.postDelayed(wallpaperTick, WallpaperManager.getInterval(this).coerceAtLeast(10_000L))
+        }
+    }
 
     /** Increased bitmap size for crisp rounded icons. */
     private val slotIconSizePx: Int by lazy { (72 * resources.displayMetrics.density).toInt() }
@@ -109,7 +127,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        settingsButton.setOnClickListener { openAndroidSettings() }
+        settingsButton.setOnClickListener { showLauncherSettingsMenu() }
         wallpaperButton.setOnClickListener { showWallpaperDialog() }
         aboutButton.setOnClickListener { showAboutDialog() }
     }
@@ -158,6 +176,7 @@ class MainActivity : AppCompatActivity() {
 
         // Sources setup
         val sources = listOf(
+            WallpaperManager.MODE_MOTION to getString(R.string.wallpaper_mode_motion),
             WallpaperManager.MODE_SOLID to getString(R.string.wallpaper_mode_solid),
             WallpaperManager.MODE_ONLINE to getString(R.string.wallpaper_mode_reddit),
             WallpaperManager.MODE_CUSTOM to getString(R.string.wallpaper_mode_custom)
@@ -166,7 +185,7 @@ class MainActivity : AppCompatActivity() {
         var selectedSourceIndex = sources.indexOfFirst { it.first == currentMode }.coerceAtLeast(0)
 
         fun updateVisibility(mode: String) {
-            redditContainer.visibility = if (mode == WallpaperManager.MODE_ONLINE) View.VISIBLE else View.GONE
+            redditContainer.visibility = if (mode == WallpaperManager.MODE_ONLINE || mode == WallpaperManager.MODE_MOTION) View.VISIBLE else View.GONE
             customUrlContainer.visibility = if (mode == WallpaperManager.MODE_CUSTOM) View.VISIBLE else View.GONE
         }
 
@@ -192,12 +211,16 @@ class MainActivity : AppCompatActivity() {
 
         // Categories setup
         val categories = listOf(
+            WallpaperManager.CATEGORY_MOTION_MIX to "Todos os universos (animes, filmes, séries e jogos)",
+            WallpaperManager.CATEGORY_MOTION_GAMES to "Jogos",
+            WallpaperManager.CATEGORY_MOTION_MOVIES to "Filmes",
+            WallpaperManager.CATEGORY_MOTION_SERIES to "Séries",
+            WallpaperManager.CATEGORY_ANIME to getString(R.string.wallpaper_category_anime),
             WallpaperManager.CATEGORY_NATURE to getString(R.string.wallpaper_category_nature),
             WallpaperManager.CATEGORY_GENERAL to getString(R.string.wallpaper_category_general),
             WallpaperManager.CATEGORY_SPACE to getString(R.string.wallpaper_category_space),
             WallpaperManager.CATEGORY_ARCHITECTURE to getString(R.string.wallpaper_category_architecture),
             WallpaperManager.CATEGORY_CARS to getString(R.string.wallpaper_category_cars),
-            WallpaperManager.CATEGORY_ANIME to getString(R.string.wallpaper_category_anime)
         )
         val initialCategoryKey = WallpaperManager.getCategory(this)
         var selectedCategoryIndex = categories.indexOfFirst { it.first == initialCategoryKey }.coerceAtLeast(0)
@@ -219,24 +242,45 @@ class MainActivity : AppCompatActivity() {
 
         // Intervals setup
         val intervals = listOf(
+            WallpaperManager.INTERVAL_30S to getString(R.string.wallpaper_interval_30s),
+            WallpaperManager.INTERVAL_1M to getString(R.string.wallpaper_interval_1m),
+            WallpaperManager.INTERVAL_5M to getString(R.string.wallpaper_interval_5m),
             WallpaperManager.INTERVAL_15M to getString(R.string.wallpaper_interval_15m),
             WallpaperManager.INTERVAL_1H to getString(R.string.wallpaper_interval_1h),
             WallpaperManager.INTERVAL_6H to getString(R.string.wallpaper_interval_6h),
             WallpaperManager.INTERVAL_24H to getString(R.string.wallpaper_interval_24h)
         )
-        val initialIntervalValue = WallpaperManager.getInterval(this)
-        var selectedIntervalIndex = intervals.indexOfFirst { it.first == initialIntervalValue }.coerceAtLeast(0)
-        intervalButton.text = intervals[selectedIntervalIndex].second
+        var selectedIntervalValue = WallpaperManager.getInterval(this)
+        fun intervalLabel(value: Long): String =
+            intervals.firstOrNull { it.first == value }?.second ?: ("Personalizado: " + value / 1000 + " s")
+        intervalButton.text = intervalLabel(selectedIntervalValue)
         intervalButton.setOnClickListener {
+            val options = intervals.map { it.second } + "Personalizado (segundos)…"
             AlertDialog.Builder(this, R.style.Theme_TVLauncher_AboutDialog)
                 .setTitle(R.string.wallpaper_interval)
-                .setSingleChoiceItems(
-                    intervals.map { it.second }.toTypedArray(),
-                    selectedIntervalIndex
-                ) { dialog, which ->
-                    selectedIntervalIndex = which
-                    intervalButton.text = intervals[which].second
+                .setSingleChoiceItems(options.toTypedArray(), intervals.indexOfFirst { it.first == selectedIntervalValue }) { dialog, which ->
                     dialog.dismiss()
+                    if (which < intervals.size) {
+                        selectedIntervalValue = intervals[which].first
+                        intervalButton.text = intervalLabel(selectedIntervalValue)
+                    } else {
+                        val input = EditText(this).apply {
+                            inputType = InputType.TYPE_CLASS_NUMBER
+                            setSingleLine(true)
+                            setText((selectedIntervalValue / 1000).toString())
+                            setSelectAllOnFocus(true)
+                        }
+                        AlertDialog.Builder(this, R.style.Theme_TVLauncher_AboutDialog)
+                            .setTitle("Tempo entre wallpapers (10–3600 segundos)")
+                            .setView(input)
+                            .setPositiveButton(R.string.done) { _, _ ->
+                                val seconds = input.text.toString().toLongOrNull()?.coerceIn(10L, 3600L) ?: 30L
+                                selectedIntervalValue = seconds * 1000
+                                intervalButton.text = intervalLabel(selectedIntervalValue)
+                            }
+                            .setNegativeButton(R.string.cancel, null)
+                            .show()
+                    }
                 }
                 .setNegativeButton(R.string.cancel, null)
                 .show()
@@ -248,7 +292,7 @@ class MainActivity : AppCompatActivity() {
         fun saveWallpaperSettings() {
             WallpaperManager.setWallpaperMode(this, currentMode)
             WallpaperManager.setCategory(this, categories[selectedCategoryIndex].first)
-            WallpaperManager.setInterval(this, intervals[selectedIntervalIndex].first)
+            WallpaperManager.setInterval(this, selectedIntervalValue)
             WallpaperManager.setCustomUrl(this, customUrlEdit.text.toString().trim())
             WallpaperManager.setDimOverlayEnabled(this, dimSwitch.isChecked)
         }
@@ -259,10 +303,12 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton(R.string.done) { _, _ ->
                 saveWallpaperSettings()
                 applyWallpaper(force = true)
+                scheduleWallpaperRotation()
             }
             .setNeutralButton(R.string.wallpaper_refresh_now) { _, _ ->
                 Toast.makeText(this, R.string.wallpaper_updating, Toast.LENGTH_SHORT).show()
                 saveWallpaperSettings()
+                scheduleWallpaperRotation()
                 applyWallpaper(force = true) { success ->
                     val hint = if (success) R.string.wallpaper_updated else R.string.wallpaper_failed
                     Toast.makeText(this, hint, Toast.LENGTH_SHORT).show()
@@ -522,6 +568,39 @@ class MainActivity : AppCompatActivity() {
         return rawSize.coerceIn(minSize, maxSize)
     }
 
+    private fun showLauncherSettingsMenu() {
+        val entries = arrayOf(
+            "Tela e projeção: Zoom / Keystone / Orientação",
+            "Wallpapers: alternância e intervalo",
+            "Configurações do Android"
+        )
+        AlertDialog.Builder(this, R.style.Theme_TVLauncher_AboutDialog)
+            .setTitle("Configurações do Motion Launcher")
+            .setItems(entries) { _, choice ->
+                when(choice) {
+                    0 -> openProjectionSettings()
+                    1 -> showWallpaperDialog()
+                    else -> openAndroidSettings()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun openProjectionSettings() {
+        // HY300por firmware: use OEM hardware calibration (including four corners).
+        TvHomeOverrideService.pauseOverrideFor(15000)
+        try {
+            startActivity(Intent("action.htcsettings.prjsettings").apply {
+                setPackage("com.htc.htcsettings")
+                addCategory(Intent.CATEGORY_DEFAULT)
+            })
+        } catch (_: Exception) {
+            Toast.makeText(this, "Ajuste da projeção indisponível. Abrindo configurações.", Toast.LENGTH_LONG).show()
+            openAndroidSettings()
+        }
+    }
+
     private fun openAndroidSettings() {
         TvHomeOverrideService.pauseOverrideFor(5000)
         try {
@@ -589,15 +668,18 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         loadAppSlots()
         applyWallpaper(force = false)
+        scheduleWallpaperRotation()
         RamOptimizationHelper.suppressStockLauncherRam(applicationContext)
     }
 
     override fun onStop() {
+        wallpaperTimer.removeCallbacks(wallpaperTick)
         super.onStop()
         appManager.invalidateAppListCache()
     }
 
     override fun onDestroy() {
+        wallpaperTimer.removeCallbacks(wallpaperTick)
         super.onDestroy()
         try {
             unregisterReceiver(refreshReceiver)

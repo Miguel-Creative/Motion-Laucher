@@ -33,6 +33,13 @@ function download(name: string, content: string) {
 
 export async function runSettingAction(action: string, navigate: Navigate) {
   switch (action) {
+    case "open-projector-settings": {
+      const native=(window as Window & {MotionNative?:{openProjectorSettings?:()=>void}}).MotionNative;
+      if(typeof native?.openProjectorSettings==="function"){native.openProjectorSettings();return;}
+      return toast.info("Ajustes de projeção no aplicativo Android", {
+        description:"No projetor: Configurações → Tela e projeção → Zoom / Keystone. A prévia web não controla o firmware."
+      });
+    }
     case "open-wallpapers":
       return navigate("/wallpapers");
     case "open-remote":

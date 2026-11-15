@@ -56,6 +56,10 @@
     <!-- Wallpaper Strings -->
     <string name="wallpaper_settings">Configurações de wallpapers</string>
     <string name="wallpaper_mode">Fonte da imagem</string>
+    <string name="wallpaper_mode_motion">Motion — Filmes, séries, jogos e animes</string>
+    <string name="wallpaper_interval_30s">A cada 30 segundos (padrão)</string>
+    <string name="wallpaper_interval_1m">A cada 1 minuto</string>
+    <string name="wallpaper_interval_5m">A cada 5 minutos</string>
     <string name="wallpaper_mode_solid">Escuro minimalista (sem wallpaper)</string>
     <string name="wallpaper_mode_reddit">Wallpapers online alternados</string>
     <string name="wallpaper_mode_custom">Imagem por URL</string>

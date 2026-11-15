@@ -64,7 +64,7 @@ export const THEME_OPTIONS = o(
 export const VISUAL_MODE_OPTIONS = o(["leve", "Leve"], ["equilibrado", "Equilibrado"], ["cinematografico", "Cinematográfico"]);
 
 export const ROTATION_OPTIONS = o(
-  ["off", "Desligado"], ["1m", "1 min"], ["5m", "5 min"], ["15m", "15 min"], ["30m", "30 min"],
+  ["off", "Desligado"], ["30s", "30 segundos"], ["1m", "1 min"], ["5m", "5 min"], ["15m", "15 min"], ["30m", "30 min"],
   ["1h", "1 hora"], ["daily", "Diário"], ["custom", "Personalizado"],
 );
 
@@ -104,8 +104,8 @@ export const SETTINGS_SECTIONS: SettingSection[] = [
     id: "wallpaper", label: "Wallpapers", icon: Image, preview: "wallpaper",
     description: "Rotação automática, mistura de categorias, transições e cache.",
     items: [
-      { id: "wallpaper.rotation", label: "Rotação automática", description: "Intervalo para trocar o wallpaper.", type: "select", default: "off", options: ROTATION_OPTIONS },
-      { id: "wallpaper.customMinutes", label: "Intervalo personalizado", description: "Usado quando a rotação está em \"Personalizado\".", type: "slider", default: 10, min: 2, max: 240, step: 1, unit: " min" },
+      { id: "wallpaper.rotation", label: "Rotação automática", description: "Intervalo para trocar o wallpaper.", type: "select", default: "30s", options: ROTATION_OPTIONS },
+      { id: "wallpaper.customSeconds", label: "Tempo personalizado", description: "Quando Personalizado estiver selecionado: 10 segundos a 60 minutos.", type: "slider", default: 30, min: 10, max: 3600, step: 5, unit: " s" },
       { id: "wallpaper.order", label: "Ordem", description: "Sequencial segue o catálogo; aleatória sorteia o próximo.", type: "segmented", default: "random", options: o(["random", "Aleatória"], ["sequential", "Sequencial"]) },
       { id: "wallpaper.mix", label: "Mistura de categorias", description: "Categorias que entram na rotação.", type: "multi", default: ["Jogos", "Filmes", "Séries", "Anime"], options: WALLPAPER_KINDS.map((k) => ({ value: k, label: k })) },
       { id: "wallpaper.transition", label: "Estilo de transição", description: "Animação ao trocar de wallpaper.", type: "segmented", default: "fade", options: o(["fade", "Esmaecer"], ["zoom", "Zoom"], ["slide", "Deslizar"], ["blur", "Desfoque"], ["none", "Nenhuma"]) },
@@ -131,7 +131,7 @@ export const SETTINGS_SECTIONS: SettingSection[] = [
       { id: "projector.blur", label: "Desfoque do fundo", description: "Desfoque aplicado à arte de fundo (0 = nítido).", type: "slider", default: 0, min: 0, max: 20, step: 1, unit: " px" },
       { id: "display.resolution", label: "Resolução de saída", description: "Lida pelo sistema Android. Alterar exige a ponte nativa.", type: "segmented", default: "720p", options: o(["720p", "1280×720"], ["1080p", "1920×1080"], ["4k", "3840×2160"]), availability: "ponte" },
       { id: "display.overscan", label: "Margem de segurança (overscan)", description: "Afasta a interface das bordas da projeção.", type: "slider", default: 0, min: 0, max: 8, step: 1, unit: "%" },
-      { id: "display.keystone", label: "Correção trapezoidal (keystone)", description: "Controlada pelo firmware do projetor; não acessível por apps comuns.", type: "slider", default: 0, min: -20, max: 20, step: 1, availability: "indisponivel" },
+      { id: "display.keystone", label: "Zoom, orientação e Keystone", description: "Na APK do HY300por, abre a tela original de zoom, orientação e correção de quatro cantos do projetor. No navegador não é possível alterar hardware.", type: "action", action: "open-projector-settings", actionLabel: "Abrir ajustes do projetor" },
       { id: "display.hardwareBrightness", label: "Brilho do projetor (hardware)", description: "Intensidade real da lâmpada/LED. Só pela ponte e se o firmware expuser a função.", type: "slider", default: 80, min: 0, max: 100, step: 1, unit: "%", availability: "ponte" },
     ],
   },
@@ -370,5 +370,5 @@ export const AVAILABILITY_LABEL: Record<Availability, string> = {
 };
 
 export const SPEC_ROTATION_MS: Record<string, number> = {
-  "1m": 60_000, "5m": 300_000, "15m": 900_000, "30m": 1_800_000, "1h": 3_600_000, daily: 86_400_000,
+  "30s": 30_000, "1m": 60_000, "5m": 300_000, "15m": 900_000, "30m": 1_800_000, "1h": 3_600_000, daily: 86_400_000,
 };
