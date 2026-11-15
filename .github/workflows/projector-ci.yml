@@ -17,9 +17,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - name: SDK
-        run: sdkmanager --install 'platforms;android-34' 'build-tools;34.0.0'
+      - name: Android SDK (runner preinstalled command-line tools)
+        shell: bash
+        run: |
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-34' 'build-tools;34.0.0'
       - name: Temporary CI signing (not production)
         run: |
           keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/ci.jks" -storepass android -keypass android -alias creativescreen-ci -keyalg RSA -keysize 2048 -validity 30 -dname 'CN=CreativeScreen CI,O=CreativeScreen,C=BR'
