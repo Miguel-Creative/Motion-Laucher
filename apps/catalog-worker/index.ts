@@ -239,14 +239,18 @@ async function catalog(request:Request,env:Env,ctx:Context){
  if(!kind)return response({error:"Categoria inválida"},400);
  const imageId=url.searchParams.get("imageId");
  if(imageId&&imageId.length>50)return response({error:"Identificador inválido"},400);
+ // Namespace cache per catalog schema: avoid old pre-filter responses after deploy.
+ const cacheUrl=new URL(request.url);
+ cacheUrl.searchParams.set("__catalog_schema","fresh-v3");
+ const cacheKey=new Request(cacheUrl.toString(),{method:"GET"});
  const edge=(caches as CacheStorage & {default:Cache}).default;
- try{const cached=await edge.match(request);if(cached)return cached;}catch{}
+ try{const cached=await edge.match(cacheKey);if(cached)return cached;}catch{}
  try{
   const variants=imageId?(kind==="Filmes"||kind==="Séries"?await tmdbImages(kind,imageId,env.TMDB_READ_TOKEN):kind==="Jogos"?await rawgImages(imageId,env.RAWG_API_KEY,env.STEAMGRIDDB_API_KEY):[]):undefined;
   const items=imageId?undefined:(kind==="Filmes"||kind==="Séries"?await tmdb(kind,env.TMDB_READ_TOKEN,feed):kind==="Jogos"?await rawg(env.RAWG_API_KEY,feed):await kitsu(feed).catch(()=>anime()));
   const source=kind==="Filmes"||kind==="Séries"?"TMDB":kind==="Jogos"?"RAWG":items?.[0]?.provider==="kitsu"?"Kitsu":"AniList";
   const result=response(imageId?{kind,source,id:imageId,variants}:{kind,source,items,feed,updatedAt:new Date().toISOString()},200,true);
-  ctx.waitUntil(edge.put(request,result.clone()).catch(()=>{}));
+  ctx.waitUntil(edge.put(cacheKey,result.clone()).catch(()=>{}));
   return result;
  }catch(e){
   const error=e instanceof Error?e.message:"Erro desconhecido";
