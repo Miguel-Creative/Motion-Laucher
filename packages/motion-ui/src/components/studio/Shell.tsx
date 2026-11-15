@@ -1,0 +1,9 @@
+import { Link } from "@tanstack/react-router";
+import { Tv, Image, Library, Settings, ArrowLeft, Zap } from "lucide-react";
+import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+
+export const NAV = [{ to: "/", label: "Início", icon: Tv }, { to: "/library", label: "Biblioteca", icon: Library }, { to: "/wallpapers", label: "Wallpapers", icon: Image }, { to: "/settings", label: "Ajustes", icon: Settings }] as const;
+export function Brand() { return <span className="flex items-center gap-2 font-display text-xl font-bold"><Zap className="text-primary" fill="currentColor" />Motion <span className="text-primary">Laucher</span></span>; }
+export function Navigation() { return <nav aria-label="Navegação principal" className="flex items-center gap-1">{NAV.map(n => <Button asChild key={n.to} variant="ghost" className="tv-focusable"><Link data-nav to={n.to} activeProps={{ className: "text-primary bg-primary/10" }}><n.icon /><span className="hidden sm:inline">{n.label}</span></Link></Button>)}</nav>; }
+export function Shell({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) { return <div className="min-h-screen bg-background"><header className="studio-header"><Link to="/" aria-label="Motion Laucher início"><Brand /></Link><Navigation /></header><main className="mx-auto max-w-[1440px] px-5 py-8 md:px-10"><div className="mb-7 flex flex-wrap items-center justify-between gap-3"><div><p className="eyebrow">MOTION LAUCHER STUDIO · DEMONSTRAÇÃO</p><h1 className="mt-2 font-display text-3xl font-bold">{title}</h1>{subtitle && <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{subtitle}</p>}</div><Button asChild variant="outline"><Link data-nav to="/"><ArrowLeft />Voltar à TV</Link></Button></div>{children}</main></div>; }
