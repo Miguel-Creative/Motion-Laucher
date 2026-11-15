@@ -1,3 +1,34 @@
+# Correção atual: Cloudflare Workers — implantação pelo Wrangler
+
+**Em 15/11/2026 o projeto foi implantado como Cloudflare Worker, e NÃO como Cloudflare Pages.** O log mostrou `npx wrangler deploy`, Worker `motion-laucher` e endereço [motion-laucher.contato-creativezone.workers.dev](https://motion-laucher.contato-creativezone.workers.dev).
+
+A compilação Vite funcionou, mas a configuração automática do Wrangler apontou para `dist` em vez de `dist/tv-preview`. Isso coloca `index.html` dentro de `/tv-preview/` e deixa a página inicial sem o documento esperado.
+
+**A correção agora está versionada no repositório, em `wrangler.jsonc`:**
+```json
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "motion-laucher",
+  "compatibility_date": "2026-11-15",
+  "assets": {
+    "directory": "./dist/tv-preview",
+    "not_found_handling": "single-page-application"
+  }
+}
+```
+
+### Executar a implantação correta
+O GitHub já compila `bun run build:tv`. O comando de deploy atual **pode continuar sendo** `npx wrangler deploy`: quando o Cloudflare cloná-lo, o Wrangler usará o arquivo `wrangler.jsonc` do repositório e enviará somente `dist/tv-preview` como raiz, com fallback das rotas SPA para `index.html`.
+
+1. Em **Cloudflare → Workers & Pages → motion-laucher → Deployments**, verificar a implantação automática após o commit. Se não houver, acionar **Retry deployment** ou **Deploy latest commit**.
+2. Confirmar no log `assets.directory = "./dist/tv-preview"` ou uploads como `/index.html` e `/assets/...` (não `/tv-preview/index.html`).
+3. Abrir o URL acima e testar `/`, `/launcher`, `/library`, `/wallpapers` e `/settings`.
+4. Caso a Cloudflare mantenha **Output Directory = dist** na interface do painel, isso não deve substituir o `wrangler.jsonc`; se houver inconsistência, ajustar também o campo visual para `dist/tv-preview`.
+
+Nenhuma VPS é necessária; o MRL continua separado e não está sendo implantado neste Worker.
+
+---
+
 # Hospedagem Cloudflare Pages — Motion Laucher
 
 **Objetivo atual:** publicar apenas a **prévia web do Motion Laucher para projetores/TVs**, para avaliação visual e ajustes sem precisar reinstalar um APK a cada alteração. A publicação do MRL vem depois da aprovação do visual.

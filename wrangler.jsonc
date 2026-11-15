@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "motion-laucher",
+  "compatibility_date": "2026-11-15",
+  "assets": {
+    "directory": "./dist/tv-preview",
+    "not_found_handling": "single-page-application"
+  }
+}
