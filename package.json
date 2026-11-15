@@ -15,7 +15,10 @@
     "build:web": "npm run build:tv && npm run build:mrl",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --config vitest.config.ts",
-    "lint": "eslint packages/motion-ui/src apps/tv-preview apps/mrl-pwa"
+    "lint": "eslint packages/motion-ui/src apps/tv-preview apps/mrl-pwa",
+    "build": "bun run build:tv",
+    "deploy:tv": "bun run build:tv && npx wrangler deploy",
+    "deploy": "bun run deploy:tv"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

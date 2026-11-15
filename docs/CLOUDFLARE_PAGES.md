@@ -1,3 +1,23 @@
+# CORREÇÃO CRÍTICA: Worker Builds não compila antes do deploy (15/11/2026)
+
+No log de falha das 15:53, Cloudflare executou `bun install` e depois diretamente `npx wrangler deploy`, SEM executar `bun run build:tv`. Com o arquivo `wrangler.jsonc` já correto, isso provoca `assets.directory ... dist/tv-preview does not exist`.
+
+**É obrigatório configurar uma etapa de compilação no painel Workers Builds.** Adicionar scripts ao `package.json` não altera automaticamente as configurações de um Worker existente. Wrangler também não cria a pasta Vite sozinho.
+
+## Ajuste único recomendado (Worker existente `motion-laucher`)
+
+1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages → motion-laucher → Settings → Builds** (o nome exato dos menus pode variar).
+2. **Build command:** `bun run build:tv`
+3. **Deploy command:** `npx wrangler deploy` (**manter**)
+4. **Root directory:** raiz do repositório (sem subpasta).
+5. Salvar e iniciar nova implantação do último commit da `main` em Deployments/Builds.
+
+A ordem correta no log será: `bun install` → **`bun run build:tv`** → `npx wrangler deploy` → upload de `/index.html` e `/assets/...`. Se preferir alterar apenas o deploy command, use `bun run deploy:tv`; ele executa build e Wrangler em sequência.
+
+O repositório também fornece scripts `bun run build`, `bun run deploy:tv` e `bun run deploy` para esse fluxo, mas **o comando de build no dashboard deve ser preenchido** para corrigir a implantação atual.
+
+---
+
 # Correção atual: Cloudflare Workers — implantação pelo Wrangler
 
 **Em 15/11/2026 o projeto foi implantado como Cloudflare Worker, e NÃO como Cloudflare Pages.** O log mostrou `npx wrangler deploy`, Worker `motion-laucher` e endereço [motion-laucher.contato-creativezone.workers.dev](https://motion-laucher.contato-creativezone.workers.dev).
@@ -18,7 +38,7 @@ A compilação Vite funcionou, mas a configuração automática do Wrangler apon
 ```
 
 ### Executar a implantação correta
-O GitHub já compila `bun run build:tv`. O comando de deploy atual **pode continuar sendo** `npx wrangler deploy`: quando o Cloudflare cloná-lo, o Wrangler usará o arquivo `wrangler.jsonc` do repositório e enviará somente `dist/tv-preview` como raiz, com fallback das rotas SPA para `index.html`.
+O Worker só pode ser implantado depois de compilar a prévia. Defina no painel **Build command = `bun run build:tv`** e mantenha **Deploy command = `npx wrangler deploy`**. O Wrangler então publicará os assets de `dist/tv-preview` e aplicará fallback SPA.
 
 1. Em **Cloudflare → Workers & Pages → motion-laucher → Deployments**, verificar a implantação automática após o commit. Se não houver, acionar **Retry deployment** ou **Deploy latest commit**.
 2. Confirmar no log `assets.directory = "./dist/tv-preview"` ou uploads como `/index.html` e `/assets/...` (não `/tv-preview/index.html`).
