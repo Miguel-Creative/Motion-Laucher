@@ -3,6 +3,7 @@ on:
   push:
     branches: [main, "feat/**"]
     paths:
+      - "apps/catalog-worker/**"
       - "apps/tv-preview/**"
       - "apps/mrl-pwa/**"
       - "packages/motion-ui/**"
@@ -47,6 +48,8 @@ jobs:
         run: |
           test -f dist/tv-preview/index.html
           node -e 'const fs=require("node:fs");const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8"));if(c.assets.directory!=="./dist/tv-preview"||c.assets.not_found_handling!=="single-page-application")process.exit(1)'
+      - name: Bundle Cloudflare Worker safely (no credentials required)
+        run: pnpm dlx wrangler@4.162.0 deploy --dry-run --outdir /tmp/motion-worker-check
       - name: Build standalone MRL PWA
         run: pnpm run build:mrl
       - uses: actions/upload-artifact@v4
