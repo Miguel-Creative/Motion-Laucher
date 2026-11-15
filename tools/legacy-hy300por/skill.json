@@ -1,0 +1,83 @@
+{
+  "name": "projector-hy300por",
+  "version": "0.1.0",
+  "description": "Controle e diagnostico reversivel do projetor Android HY300por atraves de ADB pela rede Wi-Fi, via Linkou Agent no Samsung Termux.",
+  "match": {
+    "os.platform": [
+      "android"
+    ]
+  },
+  "commands": [
+    {
+      "cmd": "bash \"$HOME/linkou-hy300por.sh\" status",
+      "tier": "auto",
+      "description": "Conectividade e resumo de sistema do projetor"
+    },
+    {
+      "cmd": "bash \"$HOME/linkou-hy300por.sh\" memory",
+      "tier": "auto",
+      "description": "Consultar RAM, ZRAM e processos"
+    },
+    {
+      "cmd": "bash \"$HOME/linkou-hy300por.sh\" home",
+      "tier": "auto",
+      "description": "Voltar para HOME"
+    },
+    {
+      "cmd": "bash \"$HOME/linkou-hy300por.sh\" volume-up",
+      "tier": "auto",
+      "description": "Aumentar volume"
+    },
+    {
+      "cmd": "bash \"$HOME/linkou-hy300por.sh\" volume-down",
+      "tier": "auto",
+      "description": "Diminuir volume"
+    },
+    {
+      "cmd": "bash \"$HOME/linkou-hy300por.sh\" screenshot",
+      "tier": "auto",
+      "description": "Salvar captura no aparelho Samsung"
+    },
+    {
+      "cmd": "bash \"$HOME/linkou-hy300por.sh\" inventory",
+      "tier": "auto",
+      "description": "Snapshot reversivel do sistema"
+    },
+    {
+      "cmd": "bash \"$HOME/linkou-hy300por.sh\" restore-telemetry",
+      "tier": "auto",
+      "description": "Reativar servico previamente desativado"
+    }
+  ],
+  "diagnostics": [
+    {
+      "question": "Por que o Projetor aparece offline no painel?",
+      "answer": "O agente roda no Samsung, e conecta por ADB 192.168.77.4:5555; o projetor nao possui Linkou Agent residente."
+    },
+    {
+      "question": "Como recuperar HOME?",
+      "answer": "No Samsung: bash ~/linkou-hy300por.sh home-original; o launcher de fabrica nao e removido."
+    }
+  ],
+  "context": {
+    "source": "https://github.com/wiiguy/lightweight_androidtv_launcher",
+    "activated_by_intent": [
+      "projetor",
+      "HY300por",
+      "controle remoto",
+      "TV launcher",
+      "memoria projetor"
+    ],
+    "execution": {
+      "mode": "on-demand",
+      "externalHooks": false,
+      "requiresRuntimeValidation": true,
+      "evidenceRequired": [
+        "ADB authorized",
+        "baseline inventory",
+        "rollback"
+      ]
+    },
+    "isolation": "Nao altera system/firmware, nao concede root. Aplicar so via ADB autorizado; nunca abrir 5555 para Internet."
+  }
+}
