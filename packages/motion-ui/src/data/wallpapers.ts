@@ -4,7 +4,8 @@ import type { UploadedWallpaper } from "@/lib/store";
 export type WallpaperKind = "Jogos" | "Filmes" | "Séries" | "Anime" | "Misto" | "Meus Wallpapers";
 
 export interface ArtVariant {
-  art: ArtId;
+  art?: ArtId;
+  src?: string;
   label: string;
   focal?: string;
   /** Demo-only CSS grading to illustrate alternative artwork selection */
@@ -19,7 +20,8 @@ export interface Wallpaper {
   genres: string[];
   platforms: string[];
   year: number;
-  provider: "demo" | "upload" | "tmdb" | "rawg" | "igdb" | "steamgriddb";
+  provider: "demo" | "upload" | "tmdb" | "rawg" | "igdb" | "steamgriddb" | "anilist";
+  sourceUrl?: string;
   externalIds?: { tmdb?: string; imdb?: string; rawg?: string };
   variants: ArtVariant[];
   uploadSrc?: string;
@@ -70,10 +72,11 @@ export function uploadsToWallpapers(uploads: UploadedWallpaper[]): Wallpaper[] {
 export function wallpaperSrc(wp: Wallpaper, quality: ArtQuality, variantIndex = 0): { src: string; focal: string; grade?: string } {
   if (wp.uploadSrc) return { src: wp.uploadSrc, focal: "50% 50%" };
   const variant = wp.variants[variantIndex] ?? wp.variants[0] ?? { art: "ember", label: "Original" };
-  const art = ART[variant.art];
-  return { src: art[quality], focal: variant.focal ?? art.focal, ...(variant.grade ? { grade: variant.grade } : {}) };
+  const art = ART[variant.art ?? "ember"];
+  const remote = variant.src?.startsWith("https://") ? variant.src : null;
+  return { src: remote ?? art[quality], focal: variant.focal ?? art.focal, ...(variant.grade ? { grade: variant.grade } : {}) };
 }
 
 export const PROVIDER_LABEL: Record<Wallpaper["provider"], string> = {
-  demo: "Demonstração", upload: "Local", tmdb: "TMDB", rawg: "RAWG", igdb: "IGDB", steamgriddb: "SteamGridDB",
+  demo: "Demonstração", upload: "Local", tmdb: "TMDB", rawg: "RAWG", igdb: "IGDB", steamgriddb: "SteamGridDB", anilist: "AniList",
 };

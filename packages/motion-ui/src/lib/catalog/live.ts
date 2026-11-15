@@ -1,0 +1,86 @@
+
+/** Live catalogs: read-only client for the same-origin Cloudflare Worker.
+ * The browser never receives the provider secrets. Demo artwork is used only until live entries load.
+ */
+import { useSyncExternalStore } from "react";
+import type { Wallpaper, WallpaperKind, ArtVariant } from "@/data/wallpapers";
+import { getState, setState } from "@/lib/store";
+
+const kinds = ["Animes","Filmes","Séries","Jogos"] as const;
+type KindRequest = typeof kinds[number];
+export type CatalogHealth = { loading:boolean; live:number; errors:Record<string,string>; updatedAt:number };
+let entries:Wallpaper[]=[];
+let health:CatalogHealth={loading:false,live:0,errors:{},updatedAt:0};
+const listeners=new Set<()=>void>();
+const notify=()=>listeners.forEach(l=>l());
+const subscribe=(l:()=>void)=>{listeners.add(l);return ()=>listeners.delete(l);};
+const snap=()=>entries;
+const healthSnap=()=>health;
+const unavailable=(cause:string)=>cause.includes("não configurad")?"Aguardando chave de integração":cause;
+const allowedProvider=new Set(["tmdb","rawg","anilist"]);
+function normalize(raw:unknown):Wallpaper|null {
+ if(!raw||typeof raw!=="object")return null;
+ const r=raw as Record<string,any>;
+ if(typeof r.id!=="string"||!/^((tmdb-(movie|tv)|rawg|anilist)-[0-9]{1,9})$/.test(r.id))return null;
+ const kind=r.kind as WallpaperKind;
+ if(!["Filmes","Séries","Jogos","Anime"].includes(kind)||!allowedProvider.has(r.provider))return null;
+ const variants=(Array.isArray(r.variants)?r.variants:[]).slice(0,16).filter((v:any)=>typeof v?.src==="string"&&v.src.startsWith("https://"))
+  .map((v:any)=>({src:v.src,label:String(v.label||"Imagem oficial"),focal:typeof v.focal==="string"?v.focal:undefined}));
+ if(!variants.length||!String(r.title||"").trim())return null;
+ return {id:r.id,title:String(r.title).slice(0,160),subtitle:String(r.subtitle||"Catálogo real"),kind,
+  genres:Array.isArray(r.genres)?r.genres.map(String).slice(0,8):[],
+  platforms:Array.isArray(r.platforms)?r.platforms.map(String).slice(0,6):[],
+  year:Number(r.year)||0,provider:r.provider,popularity:Number(r.popularity)||0,
+  sourceUrl:typeof r.sourceUrl==="string"&&r.sourceUrl.startsWith("https://")?r.sourceUrl:undefined,
+  variants};
+}
+export const getLiveCatalog=()=>entries;
+export const getCatalogHealth=()=>health;
+export const useLiveCatalog=()=>useSyncExternalStore(subscribe,snap,()=>[]);
+export const useCatalogHealth=()=>useSyncExternalStore(subscribe,healthSnap,()=>health);
+export async function refreshLiveCatalog(){
+ if(typeof window==="undefined")return;
+ health={...health,loading:true};notify();
+ const results=await Promise.all(kinds.map(async kind=>{
+  try{
+   const res=await fetch("/api/catalog?kind="+encodeURIComponent(kind),{headers:{Accept:"application/json"}});
+   const data=await res.json();
+   if(!res.ok)throw Error(String(data.error||"HTTP "+res.status));
+   return {kind,items:(Array.isArray(data.items)?data.items:[]).map(normalize).filter(Boolean) as Wallpaper[],error:""};
+  }catch(error){return {kind,items:[] as Wallpaper[],error:unavailable(error instanceof Error?error.message:"Fonte indisponível")};}
+ }));
+ const old=entries;
+ const merged=results.flatMap(r=>r.items.length?r.items:old.filter(w=>w.kind===(r.kind==="Animes"?"Anime":r.kind)));
+ const dedup=new Map(merged.map(x=>[x.id,x]));
+ entries=[...dedup.values()];
+ const errors:Object=Object.fromEntries(results.filter(r=>r.error).map(r=>[r.kind,r.error]));
+ health={loading:false,live:entries.length,errors:errors as Record<string,string>,updatedAt:Date.now()};
+ notify();
+ if(entries.length && getState().currentWallpaper.startsWith("g-")||entries.length&&/^[afsm]-/.test(getState().currentWallpaper)){
+  setState({currentWallpaper:entries[0].id});
+ }
+}
+let started=false;
+export function startLiveCatalog(){
+ if(typeof window==="undefined")return ()=>{};
+ if(started)return ()=>{};
+ started=true;
+ void refreshLiveCatalog();
+ const timer=window.setInterval(()=>{if(document.visibilityState==="visible")void refreshLiveCatalog();},60*60*1000);
+ const online=()=>void refreshLiveCatalog();
+ window.addEventListener("online",online);
+ return ()=>{window.clearInterval(timer);window.removeEventListener("online",online);started=false;};
+}
+/** Fetch alternative official artwork for the selected title, no full catalogue download. */
+export async function loadArtVariants(w:Wallpaper){
+ if(!["tmdb","rawg"].includes(w.provider))return w.variants;
+ const res=await fetch("/api/catalog?kind="+encodeURIComponent(w.kind==="Anime"?"Animes":w.kind)+"&imageId="+encodeURIComponent(w.id));
+ if(!res.ok)throw Error("Não foi possível consultar as imagens alternativas");
+ const body=await res.json() as {variants?:ArtVariant[]};
+ const extra=(body.variants||[]).filter(v=>typeof v.src==="string"&&v.src.startsWith("https://")).slice(0,16);
+ if(extra.length){
+  entries=entries.map(item=>item.id!==w.id?item:{...item,variants:[...item.variants,...extra]});
+  notify();
+ }
+ return extra;
+}

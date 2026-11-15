@@ -1,15 +1,17 @@
 import { useMemo } from "react";
 import { DEMO_WALLPAPERS, uploadsToWallpapers, wallpaperSrc, type Wallpaper } from "@/data/wallpapers";
 import type { ArtQuality } from "@/data/art";
+import { getLiveCatalog, useLiveCatalog } from "./catalog/live";
 import { getState, readSetting, setState, useAppState } from "./store";
 
 export function useAllWallpapers(): Wallpaper[] {
   const uploads = useAppState((s) => s.uploads);
-  return useMemo(() => [...uploadsToWallpapers(uploads), ...DEMO_WALLPAPERS], [uploads]);
+  const live = useLiveCatalog();
+  return useMemo(() => [...uploadsToWallpapers(uploads), ...(live.length ? live : DEMO_WALLPAPERS)], [uploads, live]);
 }
 
 export function findWallpaper(id: string): Wallpaper | undefined {
-  return DEMO_WALLPAPERS.find((w) => w.id === id) ?? uploadsToWallpapers(getState().uploads).find((w) => w.id === id);
+  return getLiveCatalog().find((w) => w.id === id) ?? DEMO_WALLPAPERS.find((w) => w.id === id) ?? uploadsToWallpapers(getState().uploads).find((w) => w.id === id);
 }
 
 export function useArtQuality(): ArtQuality {
@@ -24,7 +26,7 @@ export function useCurrentWallpaper() {
   const altIndex = useAppState((s) => s.wallpaperAlt[s.currentWallpaper] ?? 0);
   const all = useAllWallpapers();
   const quality = useArtQuality();
-  const wp = all.find((w) => w.id === id) ?? DEMO_WALLPAPERS[0];
+  const wp = all.find((w) => w.id === id) ?? all[0] ?? DEMO_WALLPAPERS[0];
   if (!wp) throw new Error("Nenhuma arte disponível.");
   return { wallpaper: wp, ...wallpaperSrc(wp, quality, altIndex) };
 }
@@ -32,9 +34,10 @@ export function useCurrentWallpaper() {
 export function rotationPool(): Wallpaper[] {
   const s = getState();
   const mix = readSetting<string[]>("wallpaper.mix");
-  const all = [...uploadsToWallpapers(s.uploads), ...DEMO_WALLPAPERS];
+  const live = getLiveCatalog();
+  const all = [...uploadsToWallpapers(s.uploads), ...(live.length ? live : DEMO_WALLPAPERS)];
   const pool = all.filter((w) => mix.includes(w.kind));
-  return pool.length ? pool : DEMO_WALLPAPERS;
+  return pool.length ? pool : all;
 }
 
 export function stepWallpaper(dir: 1 | -1, order?: "random" | "sequential") {
