@@ -860,3 +860,8 @@ html[data-perf=leve] .smart-artwork--composite{background:linear-gradient(115deg
  .tv-home .hero-title{font-size:clamp(23px,2.65vw,33px)!important;max-height:3.53em!important}
  .tv-home .tv-content{height:125px!important;flex-basis:125px!important}
 }
+
+/* Real viewport sizing also on browsers that keep the address bar visible. */
+html,body,#root{height:100%;min-height:0;}
+html[data-surface="tv"] body{overflow:hidden!important;}
+.tv-home{height:100%!important;max-height:100%!important;min-height:0!important;}

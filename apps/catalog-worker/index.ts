@@ -59,6 +59,7 @@ function tmdbMap(list:any[],kind:Kind,category:string) {
  return list.flatMap((v:any)=>{
   const wide=img(v.backdrop_path);
   if(!wide||!v.id||!isInternationalForBR(v))return [];
+  if(kind==="Séries"&&v.original_language==="ja"&&Array.isArray(v.genre_ids)&&v.genre_ids.includes(16))return [];
   const year=Number(String(v.release_date||v.first_air_date||"").slice(0,4))||0;
   return [{id:"tmdb-"+media+"-"+v.id,kind,title:String(v.title||v.name||""),
    subtitle:category+" · TMDB",genres:[],platforms:[],year,provider:"tmdb",
@@ -338,7 +339,7 @@ async function catalog(request:Request,env:Env,ctx:Context){
  if(imageId&&imageId.length>50)return response({error:"Identificador inválido"},400);
  // Namespace cache per catalog schema: avoid old pre-filter responses after deploy.
  const cacheUrl=new URL(request.url);
- cacheUrl.searchParams.set("__catalog_schema","br-anime-widescreen-v5");
+ cacheUrl.searchParams.set("__catalog_schema","br-anime-widescreen-v6");
  const cacheKey=new Request(cacheUrl.toString(),{method:"GET"});
  const edge=(caches as CacheStorage & {default:Cache}).default;
  try{const cached=await edge.match(cacheKey);if(cached)return cached;}catch{}
