@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Plus, Gamepad2, SlidersHorizontal, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,19 +6,65 @@ import { Brand, Navigation } from "./Shell";
 import { Artwork } from "./Artwork";
 import { APP_TONES } from "@/data/apps";
 import { availableLauncherApps, isNativeLauncher } from "@/lib/device/native-android";
-import { useCurrentWallpaper } from "@/lib/wallpaper";
+import { useCurrentWallpaper, stepWallpaper } from "@/lib/wallpaper";
+import type { Wallpaper } from "@/data/wallpapers";
 import { formatReleaseDate } from "@/lib/catalog/format-release";
 import { useAppState } from "@/lib/store";
 import { launchApp } from "@/lib/actions";
 import { onBridge } from "@/lib/device/bridge-channel";
 import { useNetworkClock } from "@/hooks/use-env";
 
+/** Preserve the last genuinely loaded artwork across Home ⇄ Wallpapers navigation.
+ * Without this, a slow/failed image request leaves the screen as a dark blank
+ * rectangle while the title already changes every 10 seconds. */
+let lastReadyHero: { wallpaper: Wallpaper; src: string } | null = null;
+let consecutiveArtFailures = 0;
+
 /**
  * TV home is ONE fixed 16:9 screen. No vertical scrolling and no offscreen apps.
  * The same structure is used in the browser preview and the projector APK.
  */
 export function TVHome() {
-  const { wallpaper } = useCurrentWallpaper();
+  const { wallpaper: requestedWallpaper, src: requestedSrc } = useCurrentWallpaper();
+  const [readyHero, setReadyHero] = useState<{ wallpaper: Wallpaper; src: string }>(
+    () => lastReadyHero ?? { wallpaper: requestedWallpaper, src: requestedSrc },
+  );
+
+  useEffect(() => {
+    if (lastReadyHero?.src === requestedSrc && lastReadyHero.wallpaper.id === requestedWallpaper.id) {
+      setReadyHero(lastReadyHero);
+      return;
+    }
+    let cancelled = false;
+    let completed = false;
+    const probe = new window.Image();
+    const advance = () => {
+      if (completed || cancelled) return;
+      completed = true;
+      // Do not spin forever when the TV is offline. Keep the last good image.
+      if (++consecutiveArtFailures <= 5) stepWallpaper(1, "sequential");
+    };
+    const timeout = window.setTimeout(advance, 8000);
+    probe.onload = () => {
+      if (cancelled || completed) return;
+      completed = true;
+      window.clearTimeout(timeout);
+      const accepted = { wallpaper: requestedWallpaper, src: requestedSrc };
+      lastReadyHero = accepted;
+      consecutiveArtFailures = 0;
+      setReadyHero(accepted);
+    };
+    probe.onerror = () => { window.clearTimeout(timeout); advance(); };
+    probe.src = requestedSrc;
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+      probe.onload = null;
+      probe.onerror = null;
+    };
+  }, [requestedWallpaper.id, requestedSrc]);
+
+  const wallpaper = readyHero.wallpaper;
   const pinned = useAppState(s => s.pinned);
   const now = useNetworkClock(1_000);
   const apps = availableLauncherApps();
