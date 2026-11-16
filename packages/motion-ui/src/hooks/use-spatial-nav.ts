@@ -95,7 +95,8 @@ export function useSpatialNav(onBack?: () => void) {
       const dir = KEY_DIR[e.key];
       if (!dir) return;
       if (active?.closest('[role="listbox"], [role="menu"]')) return;
-      if (inEditable && (dir === "left" || dir === "right")) return;
+      // Let Android's IME own its arrow keys after the user explicitly opened search.
+      if (inEditable) return;
       if (active?.getAttribute("role") === "slider" && (dir === "left" || dir === "right")) return;
 
       const list = getNavCandidates();

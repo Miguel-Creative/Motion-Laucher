@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { Plus, Gamepad2, SlidersHorizontal, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Brand, Navigation } from "./Shell";
 import { Artwork } from "./Artwork";
@@ -13,7 +12,6 @@ import { useAppState } from "@/lib/store";
 import { launchApp } from "@/lib/actions";
 import { onBridge } from "@/lib/device/bridge-channel";
 import { useNetworkClock } from "@/hooks/use-env";
-import { useSpatialNav } from "@/hooks/use-spatial-nav";
 
 /**
  * TV home is ONE fixed 16:9 screen. No vertical scrolling and no offscreen apps.
@@ -28,7 +26,6 @@ export function TVHome() {
   const pinnedApps = pinned.map(id => apps.find(app => app.id === id)).filter((app): app is (typeof apps)[number] => Boolean(app) && app?.pkg !== "org.xbmc.kodi");
   const favorites = native && pinnedApps.length === 0 ? apps.slice(0, 5) : pinnedApps;
 
-  useSpatialNav(() => toast.info("Você está no início."));
   useEffect(() => onBridge(message => {
     if (message.type !== "key") return;
     const map: Record<string, string> = { DPAD_UP: "ArrowUp", DPAD_DOWN: "ArrowDown", DPAD_LEFT: "ArrowLeft", DPAD_RIGHT: "ArrowRight", BACK: "Escape" };
@@ -48,7 +45,6 @@ export function TVHome() {
 
     <header className="tv-header">
       <Link className="tv-brand-link" to="/" aria-label="Motion Laucher início"><Brand /></Link>
-      <Navigation />
       <div className="tv-clock" aria-label="Hora atual">
         <strong>{now?.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}) ?? "--:--"}</strong>
         <small>{now?.toLocaleDateString("pt-BR", {weekday:"short", day:"numeric", month:"short"}) ?? ""}</small>
@@ -67,6 +63,7 @@ export function TVHome() {
           </Button>
         </div>
       </section>
+      <div className="tv-nav-dock"><Navigation /></div>
 
       <section className="tv-content" aria-label="Aplicativos favoritos">
         <div className="rail-heading">

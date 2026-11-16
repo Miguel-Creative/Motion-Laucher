@@ -1,8 +1,9 @@
-import { createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter, Outlet, useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ThemeApplier } from "@/components/system/ThemeApplier";
 import { ProjectorSvgDefs } from "@/components/system/ProjectorSvgDefs";
 import { WallpaperRotation } from "@/components/system/WallpaperRotation";
+import { useSpatialNav, focusFirst } from "@/hooks/use-spatial-nav";
 import { Toaster } from "@/components/ui/sonner";
 import { initializeStore } from "@/lib/store";
 import { startLiveCatalog } from "@/lib/catalog/live";
@@ -13,7 +14,14 @@ import { SettingsPage } from "@/components/studio/SettingsPage";
 import { WelcomePage, RecoveryPage } from "@/components/studio/WelcomePage";
 
 function TVLayout() {
+ const path=useLocation({select:s=>s.pathname});
+ useSpatialNav();
  useEffect(() => { const stopStore=initializeStore(); const stopCatalog=startLiveCatalog(); return ()=>{stopStore?.();stopCatalog();}; }, []);
+ // Every TV page starts with a clear, visible, non-editable remote focus target.
+ useEffect(() => {
+   const id=window.requestAnimationFrame(()=>{if(!document.querySelector('[role="dialog"][data-state="open"]'))focusFirst();});
+   return ()=>window.cancelAnimationFrame(id);
+ },[path]);
  return <ThemeApplier><ProjectorSvgDefs/><WallpaperRotation/><Outlet/><Toaster position="bottom-right"/></ThemeApplier>;
 }
 const rootRoute = createRootRoute({ component: TVLayout, notFoundComponent: () => <div className="min-h-screen bg-background p-8 text-foreground">Página não encontrada. <a href="/">Voltar ao início</a></div> });
