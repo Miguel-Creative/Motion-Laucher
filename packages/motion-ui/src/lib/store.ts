@@ -99,13 +99,25 @@ export const DEFAULT_STATE: PersistedState = {
   macros: DEFAULT_MACROS,
 };
 
+const ROTATION_10S_MIGRATION_KEY = "motion-laucher:rotation10s:v115";
+
 function load(): PersistedState {
   if (typeof window === "undefined") return DEFAULT_STATE;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return DEFAULT_STATE;
-    const parsed = JSON.parse(raw) as Partial<PersistedState>;
-    return { ...DEFAULT_STATE, ...parsed, settings: { ...(parsed.settings ?? {}) } };
+    const parsed = raw ? JSON.parse(raw) as Partial<PersistedState> : {};
+    const settings = { ...(parsed.settings ?? {}) };
+    // First upgrade: older installations may have explicitly persisted the
+    // previous 30s default. Switch those to the newly requested 10s once.
+    // A user who chose a different interval keeps it, and can select 30s again.
+    if (!window.localStorage.getItem(ROTATION_10S_MIGRATION_KEY)) {
+      if (settings["wallpaper.rotation"] === "30s") {
+        settings["wallpaper.rotation"] = "10s";
+        window.localStorage.setItem(KEY, JSON.stringify({ ...DEFAULT_STATE, ...parsed, settings }));
+      }
+      window.localStorage.setItem(ROTATION_10S_MIGRATION_KEY, "1");
+    }
+    return { ...DEFAULT_STATE, ...parsed, settings };
   } catch {
     return DEFAULT_STATE;
   }

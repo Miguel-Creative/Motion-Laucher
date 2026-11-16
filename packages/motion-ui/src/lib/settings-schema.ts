@@ -64,7 +64,7 @@ export const THEME_OPTIONS = o(
 export const VISUAL_MODE_OPTIONS = o(["leve", "Leve"], ["equilibrado", "Equilibrado"], ["cinematografico", "Cinematográfico"]);
 
 export const ROTATION_OPTIONS = o(
-  ["off", "Desligado"], ["30s", "30 segundos"], ["1m", "1 min"], ["5m", "5 min"], ["15m", "15 min"], ["30m", "30 min"],
+  ["off", "Desligado"], ["10s", "10 segundos"], ["30s", "30 segundos"], ["1m", "1 min"], ["5m", "5 min"], ["15m", "15 min"], ["30m", "30 min"],
   ["1h", "1 hora"], ["daily", "Diário"], ["custom", "Personalizado"],
 );
 
@@ -104,7 +104,7 @@ export const SETTINGS_SECTIONS: SettingSection[] = [
     id: "wallpaper", label: "Wallpapers", icon: Image, preview: "wallpaper",
     description: "Rotação automática, mistura de categorias, transições e cache.",
     items: [
-      { id: "wallpaper.rotation", label: "Rotação automática", description: "Intervalo para trocar o wallpaper.", type: "select", default: "30s", options: ROTATION_OPTIONS },
+      { id: "wallpaper.rotation", label: "Rotação automática", description: "Intervalo para trocar o wallpaper.", type: "select", default: "10s", options: ROTATION_OPTIONS },
       { id: "wallpaper.customSeconds", label: "Tempo personalizado", description: "Quando Personalizado estiver selecionado: 10 segundos a 60 minutos.", type: "slider", default: 30, min: 10, max: 3600, step: 5, unit: " s" },
       { id: "wallpaper.order", label: "Ordem", description: "Sequencial segue o catálogo; aleatória sorteia o próximo.", type: "segmented", default: "random", options: o(["random", "Aleatória"], ["sequential", "Sequencial"]) },
       { id: "wallpaper.mix", label: "Mistura de categorias", description: "Categorias que entram na rotação.", type: "multi", default: ["Jogos", "Filmes", "Séries", "Anime"], options: WALLPAPER_KINDS.map((k) => ({ value: k, label: k })) },
@@ -370,5 +370,5 @@ export const AVAILABILITY_LABEL: Record<Availability, string> = {
 };
 
 export const SPEC_ROTATION_MS: Record<string, number> = {
-  "30s": 30_000, "1m": 60_000, "5m": 300_000, "15m": 900_000, "30m": 1_800_000, "1h": 3_600_000, daily: 86_400_000,
+  "10s": 10_000, "30s": 30_000, "1m": 60_000, "5m": 300_000, "15m": 900_000, "30m": 1_800_000, "1h": 3_600_000, daily: 86_400_000,
 };
