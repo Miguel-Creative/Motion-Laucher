@@ -7,7 +7,7 @@ import { Artwork } from "./Artwork";
 import { APP_TONES } from "@/data/apps";
 import { availableLauncherApps, isNativeLauncher } from "@/lib/device/native-android";
 import { useCurrentWallpaper, stepWallpaper } from "@/lib/wallpaper";
-import type { Wallpaper } from "@/data/wallpapers";
+import { EMPTY_WALLPAPER, type Wallpaper, type wallpaperSrc } from "@/data/wallpapers";
 import { formatReleaseDate } from "@/lib/catalog/format-release";
 import { useAppState } from "@/lib/store";
 import { launchApp } from "@/lib/actions";
@@ -17,7 +17,8 @@ import { useNetworkClock } from "@/hooks/use-env";
 /** Preserve the last genuinely loaded artwork across Home ⇄ Wallpapers navigation.
  * Without this, a slow/failed image request leaves the screen as a dark blank
  * rectangle while the title already changes every 10 seconds. */
-let lastReadyHero: { wallpaper: Wallpaper; src: string } | null = null;
+type ReadyHero = { wallpaper: Wallpaper; art: ReturnType<typeof wallpaperSrc> };
+let lastReadyHero: ReadyHero | null = null;
 let consecutiveArtFailures = 0;
 
 /**
@@ -25,13 +26,13 @@ let consecutiveArtFailures = 0;
  * The same structure is used in the browser preview and the projector APK.
  */
 export function TVHome() {
-  const { wallpaper: requestedWallpaper, src: requestedSrc } = useCurrentWallpaper();
-  const [readyHero, setReadyHero] = useState<{ wallpaper: Wallpaper; src: string }>(
-    () => lastReadyHero ?? { wallpaper: requestedWallpaper, src: requestedSrc },
-  );
+  const { wallpaper: requestedWallpaper, ...requestedArt } = useCurrentWallpaper();
+  const requestedSrc = requestedArt.src;
+  const [readyHero, setReadyHero] = useState<ReadyHero | null>(() => lastReadyHero);
 
   useEffect(() => {
-    if (lastReadyHero?.src === requestedSrc && lastReadyHero.wallpaper.id === requestedWallpaper.id) {
+    if (!requestedSrc || requestedWallpaper.provider === "demo") return;
+    if (lastReadyHero?.art.src === requestedSrc && lastReadyHero.wallpaper.id === requestedWallpaper.id) {
       setReadyHero(lastReadyHero);
       return;
     }
@@ -49,7 +50,7 @@ export function TVHome() {
       if (cancelled || completed) return;
       completed = true;
       window.clearTimeout(timeout);
-      const accepted = { wallpaper: requestedWallpaper, src: requestedSrc };
+      const accepted = { wallpaper: requestedWallpaper, art: requestedArt };
       lastReadyHero = accepted;
       consecutiveArtFailures = 0;
       setReadyHero(accepted);
@@ -64,7 +65,7 @@ export function TVHome() {
     };
   }, [requestedWallpaper.id, requestedSrc]);
 
-  const wallpaper = readyHero.wallpaper;
+  const wallpaper = readyHero?.wallpaper ?? EMPTY_WALLPAPER;
   const pinned = useAppState(s => s.pinned);
   const now = useNetworkClock(1_000);
   const apps = availableLauncherApps();
@@ -84,7 +85,7 @@ export function TVHome() {
 
   return <div className="tv-home" data-copy-side="left">
     <div className="tv-scene">
-      <Artwork key={wallpaper.id} wallpaper={wallpaper} className="tv-wallpaper tv-wallpaper-enter" />
+      {readyHero && <Artwork key={readyHero.art.src} wallpaper={wallpaper} sourceOverride={readyHero.art} className="tv-wallpaper tv-wallpaper-enter" />}
       <div className="tv-local-scrim" />
       <div className="tv-bottom-fade" />
     </div>
@@ -100,10 +101,10 @@ export function TVHome() {
     <main className="tv-main">
       <section className="tv-hero">
         <div className="hero-copy">
-          <p className="hero-category"><Gamepad2 size={16}/>{wallpaper.kind} · Em destaque</p>
+          <p className="hero-category"><Gamepad2 size={16}/>{readyHero ? wallpaper.kind + " · Em destaque" : "Wallpapers"}</p>
           <h1 key={wallpaper.id} className="hero-title tv-title-enter" title={wallpaper.title}>{wallpaper.title}</h1>
           {wallpaper.genres.length > 0 && <p className="hero-details">{wallpaper.genres.slice(0, 2).join(" · ")}</p>}
-          <p className="hero-release-date" aria-label="Data de lançamento">{formatReleaseDate(wallpaper)}</p>
+          <p className="hero-release-date" aria-label={readyHero?"Data de lançamento":"Status dos wallpapers"}>{readyHero?formatReleaseDate(wallpaper):"Aguardando artes do catálogo"}</p>
           <Button data-nav data-nav-default asChild className="tv-personalize tv-focusable" size="lg">
             <Link to="/wallpapers"><SlidersHorizontal size={18}/>Personalizar tela</Link>
           </Button>

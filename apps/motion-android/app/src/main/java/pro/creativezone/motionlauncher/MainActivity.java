@@ -121,22 +121,18 @@ public class MainActivity extends Activity {
             Uri u = request.getUrl();
             String path = u.getPath();
             if (LIVE_HOST.equalsIgnoreCase(u.getHost())) {
-                // WebView 83 cannot parse modern Tailwind @layer/oklch CSS. Serve only
-                // the compatible, packaged stylesheet. HTML, JS, data and API stay live.
-                if (path != null && path.startsWith("/assets/index-") && path.endsWith(".css")) {
-                    try {
-                        for (String file : getAssets().list("webroot/assets")) {
-                            if (file.startsWith("index-") && file.endsWith(".css")) {
-                                return new WebResourceResponse("text/css", "UTF-8",
-                                    getAssets().open("webroot/assets/" + file));
-                            }
-                        }
-                    } catch (Exception error) { Log.w("MotionUI", "Legacy CSS unavailable"); }
+                // Match bundled HTML, JS and compatible CSS to the installed APK,
+                // while preserving the live origin, localStorage and real provider API.
+                // No old server UI or fictional wallpapers can reappear on navigation.
+                if (path != null && (path.equals("/api") || path.startsWith("/api/"))) return null;
+                if (request.isForMainFrame() && (path == null || path.equals("/") ||
+                    path.equals("/launcher") || path.equals("/library") || path.equals("/wallpapers") ||
+                    path.equals("/settings") || path.equals("/welcome") || path.equals("/onboarding") || path.equals("/recovery"))) {
+                    path = "/index.html";
                 }
-                return null;
             }
-            // Only the bundled fallback HTML/JS is used if there is no connection.
-            if (!OFFLINE_HOST.equalsIgnoreCase(u.getHost())) return null;
+            // Both origins may read local packaged assets. Real API calls remain on LIVE_HOST.
+            if (!LIVE_HOST.equalsIgnoreCase(u.getHost()) && !OFFLINE_HOST.equalsIgnoreCase(u.getHost())) return null;
             if (path == null || path.equals("/")) path = "/index.html";
             if (path.contains("..") || path.indexOf('\\') >= 0) return null;
             try {

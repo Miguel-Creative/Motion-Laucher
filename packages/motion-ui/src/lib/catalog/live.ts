@@ -1,6 +1,6 @@
 
 /** Live catalogs: read-only client for the same-origin Cloudflare Worker.
- * The browser never receives the provider secrets. Demo artwork is used only until live entries load.
+ * The browser never receives the provider secrets. Only real provider artwork is used; retain cached catalog metadata during refresh.
  */
 import { useSyncExternalStore } from "react";
 import type { Wallpaper, WallpaperKind, ArtVariant } from "@/data/wallpapers";
@@ -16,6 +16,7 @@ export const FEED_OPTIONS = [
 ] as const;
 export type EditorialFeed=typeof FEED_OPTIONS[number]["id"];
 const FEED_KEY="motion-laucher:editorial-feed";
+const CACHE_KEY="motion-laucher:real-catalog:v1";
 let selectedFeed:EditorialFeed="destaques";
 let requestVersion=0;
 export const getSelectedFeed=()=>{
@@ -63,6 +64,17 @@ function normalize(raw:unknown):Wallpaper|null {
   sourceUrl:typeof r.sourceUrl==="string"&&r.sourceUrl.startsWith("https://")?r.sourceUrl:undefined,
   variants};
 }
+function restoreCatalog(){
+ try{
+  const cached=JSON.parse(window.localStorage.getItem(CACHE_KEY)||"null");
+  if(!cached||cached.feed!==selectedFeed||!Array.isArray(cached.entries))return;
+  entries=cached.entries.slice(0,500).map(normalize).filter(Boolean) as Wallpaper[];
+  health={...health,live:entries.length,feed:selectedFeed,updatedAt:Number(cached.updatedAt)||0};notify();
+ }catch{}
+}
+function persistCatalog(){
+ try{window.localStorage.setItem(CACHE_KEY,JSON.stringify({feed:selectedFeed,updatedAt:health.updatedAt,entries:entries.slice(0,500)}));}catch{}
+}
 export const getLiveCatalog=()=>entries;
 export const getCatalogHealth=()=>health;
 export const useLiveCatalog=()=>useSyncExternalStore(subscribe,snap,()=>[]);
@@ -89,8 +101,10 @@ export async function refreshLiveCatalog(){
  const errors:Record<string,string>=Object.fromEntries(results.filter(r=>r.error).map(r=>[r.kind,r.error]));
  health={loading:false,live:entries.length,errors,updatedAt:Date.now(),feed};
  notify();
- if(entries.length && /^[afsmg]-/.test(getState().currentWallpaper)){
-  setState({currentWallpaper:entries[0].id});
+ if(entries.length){
+  persistCatalog();
+  const current=getState().currentWallpaper;
+  if(!current||/^[afsmg]-/.test(current))setState({currentWallpaper:entries[0].id});
  }
 }
 let started=false;
@@ -102,6 +116,7 @@ export function startLiveCatalog(){
   const saved=window.localStorage.getItem(FEED_KEY);
   if(FEED_OPTIONS.some(o=>o.id===saved))selectedFeed=saved as EditorialFeed;
  }catch{}
+ restoreCatalog();
  void refreshLiveCatalog();
  const timer=window.setInterval(()=>{if(document.visibilityState==="visible")void refreshLiveCatalog();},60*60*1000);
  const online=()=>void refreshLiveCatalog();

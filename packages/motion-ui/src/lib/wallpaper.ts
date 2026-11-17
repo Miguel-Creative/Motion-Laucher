@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { DEMO_WALLPAPERS, uploadsToWallpapers, wallpaperSrc, type Wallpaper } from "@/data/wallpapers";
+import { EMPTY_WALLPAPER, uploadsToWallpapers, wallpaperSrc, type Wallpaper } from "@/data/wallpapers";
 import type { ArtQuality } from "@/data/art";
 import { getLiveCatalog, useLiveCatalog } from "./catalog/live";
 import { getState, readSetting, setState, useAppState } from "./store";
@@ -7,11 +7,11 @@ import { getState, readSetting, setState, useAppState } from "./store";
 export function useAllWallpapers(): Wallpaper[] {
   const uploads = useAppState((s) => s.uploads);
   const live = useLiveCatalog();
-  return useMemo(() => [...uploadsToWallpapers(uploads), ...(live.length ? live : DEMO_WALLPAPERS)], [uploads, live]);
+  return useMemo(() => [...uploadsToWallpapers(uploads), ...live], [uploads, live]);
 }
 
 export function findWallpaper(id: string): Wallpaper | undefined {
-  return getLiveCatalog().find((w) => w.id === id) ?? DEMO_WALLPAPERS.find((w) => w.id === id) ?? uploadsToWallpapers(getState().uploads).find((w) => w.id === id);
+  return getLiveCatalog().find((w) => w.id === id) ?? uploadsToWallpapers(getState().uploads).find((w) => w.id === id);
 }
 
 export function useArtQuality(): ArtQuality {
@@ -23,25 +23,25 @@ export function useArtQuality(): ArtQuality {
 
 export function useCurrentWallpaper() {
   const id = useAppState((s) => s.currentWallpaper);
-  const altIndex = useAppState((s) => s.wallpaperAlt[s.currentWallpaper] ?? 0);
+  const altMap = useAppState((s) => s.wallpaperAlt);
   const all = useAllWallpapers();
   const quality = useArtQuality();
-  const wp = all.find((w) => w.id === id) ?? all[0] ?? DEMO_WALLPAPERS[0];
-  if (!wp) throw new Error("Nenhuma arte disponível.");
-  return { wallpaper: wp, ...wallpaperSrc(wp, quality, altIndex) };
+  const wp = all.find((w) => w.id === id) ?? all[0] ?? EMPTY_WALLPAPER;
+  return { wallpaper: wp, ...wallpaperSrc(wp, quality, altMap[wp.id] ?? 0) };
 }
 
 export function rotationPool(): Wallpaper[] {
   const s = getState();
   const mix = readSetting<string[]>("wallpaper.mix");
   const live = getLiveCatalog();
-  const all = [...uploadsToWallpapers(s.uploads), ...(live.length ? live : DEMO_WALLPAPERS)];
+  const all = [...uploadsToWallpapers(s.uploads), ...live];
   const pool = all.filter((w) => mix.includes(w.kind));
   return pool.length ? pool : all;
 }
 
 export function stepWallpaper(dir: 1 | -1, order?: "random" | "sequential") {
   const pool = rotationPool();
+  if (!pool.length) return;
   const s = getState();
   const mode = order ?? readSetting<string>("wallpaper.order");
   const idx = pool.findIndex((w) => w.id === s.currentWallpaper);

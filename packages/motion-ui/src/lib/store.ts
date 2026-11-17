@@ -59,7 +59,6 @@ export const DEFAULT_MACROS: Macro[] = [
     id: "m-cinema", name: "Sessão de cinema", category: "Cinema", trigger: "manual", time: "20:00", days: [5, 6], enabled: true,
     steps: [
       { kind: "theme", themeId: "minimal-oled" },
-      { kind: "wallpaper", wallpaperId: "f-nebula" },
       { kind: "wait", ms: 600 },
       { kind: "launch", appId: "netflix" },
     ],
@@ -68,7 +67,6 @@ export const DEFAULT_MACROS: Macro[] = [
     id: "m-gamer", name: "Noite gamer", category: "Jogos", trigger: "schedule", time: "21:30", days: [5], enabled: true,
     steps: [
       { kind: "theme", themeId: "cyber-neon" },
-      { kind: "wallpaper", wallpaperId: "g-neon" },
       { kind: "launch", appId: "retroarch" },
     ],
   },
@@ -89,10 +87,10 @@ export const DEFAULT_STATE: PersistedState = {
   hidden: [],
   order: [],
   recents: ["youtube", "retroarch", "kodi", "vlc"],
-  favWallpapers: ["g-ember", "a-sky"],
-  collections: [{ id: "c-noite", name: "Noite de sexta", items: ["g-neon", "f-nebula", "s-moon"] }],
+  favWallpapers: [],
+  collections: [],
   uploads: [],
-  currentWallpaper: "g-ember",
+  currentWallpaper: "",
   wallpaperAlt: {},
   onboarded: false,
   playbackActive: false,
@@ -117,7 +115,12 @@ function load(): PersistedState {
       }
       window.localStorage.setItem(ROTATION_10S_MIGRATION_KEY, "1");
     }
-    return { ...DEFAULT_STATE, ...parsed, settings };
+    const retired=(id:string)=>/^[afsmg]-/.test(id);
+    const loaded={...DEFAULT_STATE,...parsed,settings};
+    return {...loaded,currentWallpaper:retired(loaded.currentWallpaper)?"":loaded.currentWallpaper,
+      favWallpapers:loaded.favWallpapers.filter(id=>!retired(id)),
+      collections:loaded.collections.map(x=>({...x,items:x.items.filter(id=>!retired(id))})),
+      wallpaperAlt:Object.fromEntries(Object.entries(loaded.wallpaperAlt).filter(([id])=>!retired(id))) };
   } catch {
     return DEFAULT_STATE;
   }

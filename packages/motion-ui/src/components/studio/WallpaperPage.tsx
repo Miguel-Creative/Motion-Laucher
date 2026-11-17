@@ -58,7 +58,7 @@ export function WallpaperPage() {
   const safePage = Math.min(page, pageCount - 1);
   const currentPage = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize);
   const selected = currentPage.find(w => w.id === selectedId) ?? currentPage[0] ?? wallpaper;
-  const applied = wallpaper.id === selected.id;
+  const applied = !!selected.id && wallpaper.id === selected.id;
 
   const resetList = () => { setPage(0); setSelectedId(null); setPanel("detail"); };
   const chooseFeed = (value: EditorialFeed) => {
@@ -66,9 +66,10 @@ export function WallpaperPage() {
     if (value === "novas-temporadas" && !["Séries", "Anime"].includes(category)) setCategory("Anime");
     resetList();
   };
-  const apply = (w: Wallpaper) => { setState({ currentWallpaper: w.id }); setSelectedId(w.id); toast.success("Wallpaper aplicado à tela inicial."); };
-  const toggleFavorite = () => toggleInList("favWallpapers", selected.id);
+  const apply = (w: Wallpaper) => { if(!w.id)return; setState({ currentWallpaper: w.id }); setSelectedId(w.id); toast.success("Wallpaper aplicado à tela inicial."); };
+  const toggleFavorite = () => {if(selected.id)toggleInList("favWallpapers", selected.id);};
   const showPreview = () => {
+    if(!selected.id)return;
     setPreviewOpen(true);
     if (selected.provider === "tmdb" || selected.provider === "rawg") {
       void loadArtVariants(selected).catch(() => toast.info("Não foi possível carregar artes alternativas."));
@@ -125,7 +126,7 @@ export function WallpaperPage() {
         <section className="wp-catalog" aria-label="Catálogo de wallpapers">
           <div className="wp-catalog-head">
             <span><strong>{category==="Todos"?"Explore o catálogo":category}</strong> <span className="wp-muted">· {filtered.length} artes</span></span>
-            <span className="wp-source">{catalogHealth.loading ? "Atualizando catálogo" : catalogHealth.live ? "Catálogo atualizado" : "Catálogo local"}</span>
+            <span className="wp-source">{catalogHealth.loading ? "Atualizando catálogo" : catalogHealth.live ? "Catálogo atualizado" : "Sem catálogo online"}</span>
           </div>
           <div className="wp-grid">
             {currentPage.map(w=>
@@ -160,12 +161,12 @@ export function WallpaperPage() {
             <div className="wp-selected-title" title={selected.title}>{selected.title}</div>
             <div className="wp-selected-meta">{selected.kind} · {formatReleaseDate(selected)}</div>
             <div className="wp-detail-actions">
-              <Button data-nav className="wp-apply" onClick={()=>apply(selected)}><Check size={16}/>{applied?"Em uso":"Aplicar wallpaper"}</Button>
-              <Button data-nav className="wp-icon-button" aria-label="Favoritar wallpaper" aria-pressed={favorites.includes(selected.id)} onClick={toggleFavorite}><Heart size={18}/></Button>
+              <Button data-nav className="wp-apply" disabled={!selected.id} onClick={()=>apply(selected)}><Check size={16}/>{applied?"Em uso":"Aplicar wallpaper"}</Button>
+              <Button data-nav className="wp-icon-button" aria-label="Favoritar wallpaper" disabled={!selected.id} aria-pressed={favorites.includes(selected.id)} onClick={toggleFavorite}><Heart size={18}/></Button>
             </div>
             <div className="wp-secondary-actions">
               <Button data-nav className="wp-secondary" onClick={()=>setShowOriginal(v=>!v)}>{showOriginal?"Ver otimizada":"Ver original"}</Button>
-              <Button data-nav className="wp-secondary" onClick={showPreview}>Mais artes</Button>
+              <Button data-nav className="wp-secondary" disabled={!selected.id} onClick={showPreview}>Mais artes</Button>
             </div>
             <p className="wp-help">Selecionar uma arte à esquerda mostra sua prévia. Aperte OK para aplicá-la na tela inicial.</p>
           </div> :

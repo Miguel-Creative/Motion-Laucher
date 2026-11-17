@@ -1,7 +1,7 @@
 /**
  * Wallpaper/catalog source adapters.
  * - Only official APIs with the user's own keys. No scraping of IMDb or any website.
- * - Without credentials the app uses DEMO_WALLPAPERS and labels everything "Demonstração".
+ * - Without credentials or connectivity no fictional artwork is shown.
  * - Never redistribute provider artwork; display with attribution per provider terms.
  */
 import type { Wallpaper } from "@/data/wallpapers";
@@ -26,7 +26,7 @@ export interface CatalogSource {
 
 export const demoSource: CatalogSource = {
   id: "demo",
-  name: "Catálogo de demonstração",
+  name: "Catálogo de demonstração desativado",
   kinds: ["Jogos", "Filmes", "Séries", "Anime", "Misto"],
   browserCapable: true,
   attribution: "Artes originais geradas para este protótipo. Títulos fictícios.",

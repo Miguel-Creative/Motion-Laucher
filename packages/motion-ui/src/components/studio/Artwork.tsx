@@ -16,8 +16,8 @@ import { chooseWallpaperLayout } from "@/lib/image/smart-framing";
  * - Reprodução e trocas não processam pixels nem geram arquivos/novos personagens.
  */
 export function Artwork({
- wallpaper, className="", original=false, thumbnail=false
-}: {wallpaper:Wallpaper;className?:string;original?:boolean;thumbnail?:boolean}) {
+ wallpaper, className="", original=false, thumbnail=false, sourceOverride
+}: {wallpaper:Wallpaper;className?:string;original?:boolean;thumbnail?:boolean;sourceOverride?:ReturnType<typeof wallpaperSrc>}) {
  const p=useProjector();
  const quality=useArtQuality();
  const perf=useSetting<string>("performance.visualMode");
@@ -25,7 +25,7 @@ export function Artwork({
  const fitMode=useSetting<string>("wallpaper.fitMode") || "preserve";
  const focusX=useSetting<number>("wallpaper.focusX") ?? 50;
  const focusY=useSetting<number>("wallpaper.focusY") ?? 50;
- const art=wallpaperSrc(wallpaper,thumbnail?"sm":quality,alt);
+ const art=sourceOverride ?? wallpaperSrc(wallpaper,thumbnail?"sm":quality,alt);
  const [dimensions,setDimensions]=useState({src:"",width:0,height:0});
  // Real landscape art fills the panel; portraits/panoramas preserve the entire subject.
  // Manual "fill" is the only setting allowed to deliberately crop an image.
@@ -37,6 +37,7 @@ export function Artwork({
   const im=event.currentTarget;
   setDimensions({src:art.src,width:im.naturalWidth,height:im.naturalHeight});
  };
+ if(!art.src) return <div className={`smart-artwork ${className}`} role="img" aria-label="Wallpaper indisponível"/>;
  if(thumbnail) return <img src={art.src} alt={wallpaper.title} loading="lazy" decoding="async"
    className={`object-cover ${className}`} style={{objectPosition:imageFocal,filter:filters}}/>;
  return <div className={`smart-artwork ${smart==="composite"?"smart-artwork--composite":"smart-artwork--cover"} ${className}`}

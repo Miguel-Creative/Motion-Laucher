@@ -1459,8 +1459,8 @@ html[data-surface="tv"] body{overflow:hidden!important;}
 }
 @media(max-width:600px) and (orientation:portrait){.studio-settings-shell{height:auto!important;min-height:100vh!important;max-height:none!important;overflow:visible!important;}.studio-settings-shell .studio-settings-main{overflow:visible!important;}.settings-tv{display:flex!important;flex-direction:column!important;overflow:visible!important;}.settings-tv .settings-categories{max-height:200px!important;}.settings-tv .settings-panel{min-height:330px!important;}.settings-tv .settings-options{max-height:480px!important;}}
 /* Home glass: keep the dock lighter than the favorites without fading text. */
-.tv-home .tv-nav-dock nav{background:rgba(8,14,24,.27)!important;}
-.tv-home .favorite-row .app-tile,.tv-home .favorite-row .app-tile-add{background:rgba(10,17,27,.43)!important;}
+.tv-home .tv-nav-dock nav{background:rgba(8,14,24,.19)!important;}
+.tv-home .favorite-row .app-tile,.tv-home .favorite-row .app-tile-add{background:rgba(10,17,27,.33)!important;}
 .tv-home .tv-nav-dock nav a,.tv-home .favorite-row .app-tile span,.tv-home .favorite-row .app-tile-add{ text-shadow:0 2px 6px rgba(0,0,0,.85)!important;}
 
 /* Remote-friendly values: select/dropdown and range never capture the D-pad. */

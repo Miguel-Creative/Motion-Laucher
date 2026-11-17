@@ -1,20 +1,20 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { SETTINGS_SECTIONS, SPEC_ROTATION_MS } from "@/lib/settings-schema";
 import { device } from "@/lib/device/simulated";
-import { DEMO_WALLPAPERS, wallpaperSrc } from "@/data/wallpapers";
+import { DEMO_WALLPAPERS, EMPTY_WALLPAPER, wallpaperSrc, type Wallpaper } from "@/data/wallpapers";
 import { demoSource } from "@/lib/catalog/sources";
 import { setState, getState, DEFAULT_STATE, initializeStore, setSetting, readSetting } from "@/lib/store";
-import { stepWallpaper } from "@/lib/wallpaper";
+import { stepWallpaper, rotationPool } from "@/lib/wallpaper";
 
 describe("Local prototype rules", () => {
  beforeEach(() => { localStorage.clear(); setState({...DEFAULT_STATE, settings:{}}); });
  it("provides all 23 settings categories", () => { expect(SETTINGS_SECTIONS).toHaveLength(23); });
  it("keeps physical RAM separate from ZRAM on HY300por", async () => {const stats=await device.getSystemStats();expect(stats.ram.totalMb).toBe(1024);expect(stats.zram.totalMb).toBe(512);expect(stats.source).toBe("demo");});
  it("does not pretend a key command controls real Android", async () => {const result=await device.sendKey("HOME");expect(result.simulated).toBe(true);expect(device.kind).toBe("simulated");});
- it("offers anime artwork in the local catalog", () => {expect(DEMO_WALLPAPERS.filter(w=>w.kind==="Anime").length).toBeGreaterThan(0);});
- it("uses only demo providers for the original catalog", async () => {expect((await demoSource.search("")).every(w=>w.provider==="demo")).toBe(true);});
- it("rotates only through selected categories", () => {setState({currentWallpaper:"a-sky",settings:{"wallpaper.mix":["Anime"],"wallpaper.order":"sequential"}});stepWallpaper(1);expect(DEMO_WALLPAPERS.find(w=>w.id===getState().currentWallpaper)?.kind).toBe("Anime");expect(getState().currentWallpaper).not.toBe("a-sky");});
- it("persists the wallpaper selection locally", () => {setState({currentWallpaper:"a-neon"});setState({currentWallpaper:"g-ember"});localStorage.setItem("motion-laucher:v1",JSON.stringify({...DEFAULT_STATE,currentWallpaper:"a-neon"}));const cleanup=initializeStore();expect(getState().currentWallpaper).toBe("a-neon");cleanup();});
+ it("does not bundle fictional artwork", () => {expect(DEMO_WALLPAPERS).toEqual([]);expect(wallpaperSrc(EMPTY_WALLPAPER,"md").src).toBe("");});
+ it("the retired demo provider returns no artwork", async () => {expect(await demoSource.search("")).toEqual([]);});
+ it("never rotates to demo artwork when no real artwork is available", () => {expect(rotationPool()).toEqual([]);expect(stepWallpaper(1)).toBeUndefined();expect(getState().currentWallpaper).toBe("");});
+ it("persists the real selection locally while dropping retired demo IDs", () => {localStorage.setItem("motion-laucher:v1",JSON.stringify({...DEFAULT_STATE,currentWallpaper:"tmdb-movie-123",favWallpapers:["g-ember","tmdb-movie-123"],pinned:["netflix"]}));const cleanup=initializeStore();expect(getState().currentWallpaper).toBe("tmdb-movie-123");expect(getState().favWallpapers).toEqual(["tmdb-movie-123"]);expect(getState().pinned).toEqual(["netflix"]);cleanup();});
  it("persists reversible demo app disablement", () => {setSetting("demo.disabledApps",["youtube"]);expect(readSetting("demo.disabledApps")).toEqual(["youtube"]);setSetting("demo.disabledApps",[]);expect(readSetting("demo.disabledApps")).toEqual([]);expect(JSON.parse(localStorage.getItem("motion-laucher:v1") ?? "{}").settings["demo.disabledApps"]).toEqual([]);});
  it("rotates every 10 seconds by default while keeping 30 seconds optional",()=>{
    const controls=SETTINGS_SECTIONS.find(s=>s.id==="wallpaper")!.items;
@@ -46,5 +46,5 @@ describe("Local prototype rules", () => {
    stop();
  });
  it("daily rotation lasts 24 hours", () => {expect(SPEC_ROTATION_MS['daily']).toBe(86_400_000);});
- it("falls back safely for invalid art variant selection", () => {const wp=DEMO_WALLPAPERS[0];if(!wp)throw new Error("Missing test fixture");expect(wallpaperSrc(wp,"md",999).src).toBe(wallpaperSrc(wp,"md",0).src);});
+ it("falls back safely for invalid art variant selection", () => {const wp:Wallpaper={...EMPTY_WALLPAPER,id:"tmdb-movie-1",provider:"tmdb",variants:[{label:"Real",src:"https://image.tmdb.org/t/p/w1280/example.jpg"}]};expect(wallpaperSrc(wp,"md",999).src).toBe(wallpaperSrc(wp,"md",0).src);});
 });
