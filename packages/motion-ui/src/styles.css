@@ -1471,3 +1471,6 @@ html[data-surface="tv"] body{overflow:hidden!important;}
 .settings-tv .setting-row>div:first-child>span[class*="text-warning"]{color:#f5c17a!important;}
 .settings-tv .setting-row>div:first-child>span[class*="text-success"]{color:#a8d8bb!important;}
 @media(max-height:620px){.settings-tv .settings-stepper{grid-template-columns:27px minmax(0,1fr) 27px!important;}.settings-tv .settings-stepper button{width:27px!important;height:30px!important;font-size:17px!important;}.settings-tv .settings-stepper output{font-size:11px!important;}}
+
+/* TV text settings: arrows move focus without opening the keyboard. OK edits. */
+.settings-tv .settings-edit-text{width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;text-align:left!important;}
