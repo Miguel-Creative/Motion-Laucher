@@ -64,11 +64,23 @@ function findNext(from: HTMLElement, list: HTMLElement[], dir: Dir) {
   return best;
 }
 
+/** Scroll the pane directly: legacy Android WebView may ignore scrollIntoView options. */
+export function scrollSettingsFocus(target: HTMLElement): boolean {
+  const pane = target.closest<HTMLElement>(".settings-categories, .settings-options");
+  if (!pane) return false;
+  const bounds = pane.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
+  const pad = 4;
+  if (rect.top < bounds.top + pad) pane.scrollTop += rect.top - bounds.top - pad;
+  else if (rect.bottom > bounds.bottom - pad) pane.scrollTop += rect.bottom - bounds.bottom + pad;
+  return true;
+}
+
 export function focusFirst() {
   const list = getNavCandidates();
   const target = list.find((el) => el.hasAttribute("data-nav-default")) ?? list[0];
   target?.focus({ preventScroll: true });
-  target?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (target && !scrollSettingsFocus(target)) target.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 /**
@@ -140,7 +152,7 @@ export function useSpatialNav(onBack?: () => void) {
         e.preventDefault();
         e.stopPropagation();
         next.focus({ preventScroll: true });
-        next.scrollIntoView({ block: "nearest", inline: "nearest", behavior: document.documentElement.dataset["perf"] === "leve" ? "auto" : "smooth" });
+        if (!scrollSettingsFocus(next)) next.scrollIntoView({ block: "nearest", inline: "nearest", behavior: document.documentElement.dataset["perf"] === "leve" ? "auto" : "smooth" });
       }
     };
     window.addEventListener("keydown", handler, true);
