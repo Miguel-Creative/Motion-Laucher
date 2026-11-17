@@ -106,7 +106,23 @@ export function useSpatialNav(onBack?: () => void) {
         focusFirst();
         return;
       }
-      const next = findNext(active, list, dir);
+      const zone = active.closest("[data-settings-zone]")?.getAttribute("data-settings-zone");
+      const settings = active.closest(".settings-tv");
+      let next: HTMLElement | null = null;
+      if (settings && zone) {
+        const within = list.filter(el => settings.contains(el));
+        const categories = within.filter(el => el.closest('[data-settings-zone="categories"]'));
+        const options = within.filter(el => el.closest('[data-settings-zone="options"]'));
+        const currentCategory = categories.find(el => el.getAttribute("aria-pressed") === "true") ?? categories.find(el => el.hasAttribute("data-setting-category"));
+        if (zone === "options" && active.matches('input[type="range"]') && (dir === "left" || dir === "right")) return;
+        if (zone === "categories" && dir === "right") next = options[0] ?? null;
+        else if (zone === "options" && dir === "left") next = currentCategory ?? null;
+        else if (dir === "up" || dir === "down") {
+          next = findNext(active, zone === "categories" ? categories : options, dir);
+          if (!next && dir === "up") next = findNext(active, list.filter(el => !settings.contains(el)), dir);
+        } else if (zone === "options" && dir === "right") next = findNext(active, options, dir);
+        if (!next) { e.preventDefault(); return; }
+      } else next = findNext(active, list, dir);
       if (next) {
         e.preventDefault();
         e.stopPropagation();
