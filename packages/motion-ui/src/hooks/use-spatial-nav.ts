@@ -114,14 +114,27 @@ export function useSpatialNav(onBack?: () => void) {
         const categories = within.filter(el => el.closest('[data-settings-zone="categories"]'));
         const options = within.filter(el => el.closest('[data-settings-zone="options"]'));
         const currentCategory = categories.find(el => el.getAttribute("aria-pressed") === "true") ?? categories.find(el => el.hasAttribute("data-setting-category"));
-        if (zone === "options" && active.matches('input[type="range"]') && (dir === "left" || dir === "right")) return;
-        if (zone === "categories" && dir === "right") next = options[0] ?? null;
-        else if (zone === "options" && dir === "left") next = currentCategory ?? null;
-        else if (dir === "up" || dir === "down") {
-          next = findNext(active, zone === "categories" ? categories : options, dir);
-          if (!next && dir === "up") next = findNext(active, list.filter(el => !settings.contains(el)), dir);
-        } else if (zone === "options" && dir === "right") next = findNext(active, options, dir);
-        if (!next) { e.preventDefault(); return; }
+        if (zone === "categories") {
+          if (dir === "right") next = options[0] ?? null;
+          else if (dir === "up") next = categories[categories.indexOf(active)-1] ?? findNext(active,list.filter(el=>!settings.contains(el)),dir);
+          else if (dir === "down") next = categories[categories.indexOf(active)+1] ?? null;
+        } else {
+          const row = active.closest(".setting-row");
+          const peers = row ? options.filter(el=>el.closest(".setting-row")===row) : [active];
+          const index = options.indexOf(active);
+          if (dir === "left") next = peers[peers.indexOf(active)-1] ?? currentCategory ?? null;
+          else if (dir === "right") next = peers[peers.indexOf(active)+1] ?? null;
+          else {
+            const rest = dir === "down" ? options.slice(index+1) : options.slice(0,index).reverse();
+            const first = rest.find(el=>!row || el.closest(".setting-row")!==row);
+            if(first){
+              const nextRow=first.closest(".setting-row");
+              const controls=nextRow?options.filter(el=>el.closest(".setting-row")===nextRow):[first];
+              next=controls[Math.min(Math.max(peers.indexOf(active),0),controls.length-1)] ?? first;
+            } else if(dir==="up") next=findNext(active,list.filter(el=>!settings.contains(el)),dir);
+          }
+        }
+        if (!next) { e.preventDefault(); e.stopPropagation(); return; }
       } else next = findNext(active, list, dir);
       if (next) {
         e.preventDefault();

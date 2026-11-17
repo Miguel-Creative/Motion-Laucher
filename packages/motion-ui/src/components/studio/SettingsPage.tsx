@@ -8,11 +8,13 @@ import { SETTINGS_SECTIONS } from "@/lib/settings-schema";
 import { resetSection } from "@/lib/store";
 import { useCurrentWallpaper } from "@/lib/wallpaper";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export function SettingsPage() {
  const [section,setSection]=useState("display");
  const [query,setQuery]=useState("");
+ const [restore,setRestore]=useState<string|null>(null);
  const {wallpaper}=useCurrentWallpaper();
  const options=useRef<HTMLDivElement>(null);
  const active=SETTINGS_SECTIONS.find(s=>s.id===section);
@@ -37,13 +39,14 @@ export function SettingsPage() {
     <div ref={options} className="settings-options" data-settings-zone="options">
      {filtered.map(s=><section key={s.id} className="settings-section">
       {needle&&<h3 className="settings-result-heading">{s.label}</h3>}
-      {s.items.filter(i=>!needle||`${s.label} ${i.label} ${i.description}`.toLocaleLowerCase("pt-BR").includes(needle)).map(def=><SettingControl key={def.id} def={def}/>)}
-      <Button data-nav variant="outline" className="settings-reset" aria-label={`Restaurar ${s.label}`} onClick={()=>{resetSection(s.id);toast.success("Categoria restaurada.");}}><RotateCcw/>Restaurar categoria</Button>
+      {s.items.filter(i=>!needle||`${s.label} ${i.label} ${i.description}`.toLocaleLowerCase("pt-BR").includes(needle)).map(def=><SettingControl key={def.id} def={def} tvControls/>)}
+      <Button data-nav variant="outline" className="settings-reset" aria-label={`Restaurar ${s.label}`} onClick={()=>setRestore(s.id)}><RotateCcw/>Restaurar categoria</Button>
      </section>)}
      {!filtered.length&&<p className="settings-empty">Nenhum ajuste encontrado.</p>}
     </div>
-    <div className="settings-panel-help">← Categorias · ↑ ↓ Navegar · OK Selecionar · ← → Ajustar controles deslizantes</div>
+    <div className="settings-panel-help">← Categorias · ↑ ↓ Navegar · ← → Escolher controle · OK Alterar</div>
    </div>
+   <Dialog open={restore!==null} onOpenChange={open=>{if(!open)setRestore(null);}}><DialogContent className="wp-search-dialog"><DialogTitle>Restaurar categoria?</DialogTitle><DialogDescription>Somente os ajustes da categoria escolhida serão restaurados.</DialogDescription><Button data-nav variant="outline" onClick={()=>setRestore(null)}>Cancelar</Button><Button data-nav variant="destructive" onClick={()=>{if(restore)resetSection(restore);setRestore(null);toast.success("Categoria restaurada.");}}>Restaurar</Button></DialogContent></Dialog>
   </div>
  </Shell>;
 }

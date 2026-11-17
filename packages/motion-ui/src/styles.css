@@ -1462,3 +1462,12 @@ html[data-surface="tv"] body{overflow:hidden!important;}
 .tv-home .tv-nav-dock nav{background:rgba(8,14,24,.27)!important;}
 .tv-home .favorite-row .app-tile,.tv-home .favorite-row .app-tile-add{background:rgba(10,17,27,.43)!important;}
 .tv-home .tv-nav-dock nav a,.tv-home .favorite-row .app-tile span,.tv-home .favorite-row .app-tile-add{ text-shadow:0 2px 6px rgba(0,0,0,.85)!important;}
+
+/* Remote-friendly values: select/dropdown and range never capture the D-pad. */
+.settings-tv .settings-stepper{display:grid!important;grid-template-columns:34px minmax(0,1fr) 34px!important;grid-gap:4px!important;align-items:center!important;width:100%!important;min-width:0!important;}
+.settings-tv .settings-stepper button{display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;width:34px!important;height:36px!important;font-size:20px!important;line-height:1!important;}
+.settings-tv .settings-stepper output{margin:0!important;font-size:12px!important;line-height:1.25!important;text-align:center!important;overflow-wrap:break-word!important;white-space:normal!important;}
+.settings-tv [data-nav]{scroll-margin:5px!important;}
+.settings-tv .setting-row>div:first-child>span[class*="text-warning"]{color:#f5c17a!important;}
+.settings-tv .setting-row>div:first-child>span[class*="text-success"]{color:#a8d8bb!important;}
+@media(max-height:620px){.settings-tv .settings-stepper{grid-template-columns:27px minmax(0,1fr) 27px!important;}.settings-tv .settings-stepper button{width:27px!important;height:30px!important;font-size:17px!important;}.settings-tv .settings-stepper output{font-size:11px!important;}}
