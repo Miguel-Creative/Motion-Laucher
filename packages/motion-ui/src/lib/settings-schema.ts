@@ -364,10 +364,20 @@ export function findSetting(id: string): SettingDef | undefined {
 
 export const AVAILABILITY_LABEL: Record<Availability, string> = {
   local: "Funciona",
-  demo: "Demonstração",
-  ponte: "Requer ponte Android",
-  indisponivel: "Indisponível",
+  demo: "Em breve",
+  ponte: "Em breve · integração Android",
+  indisponivel: "Indisponível neste aparelho",
 };
+
+/** Availability is an implementation classification, not a hardware certification.
+ * The TV has no /remote route; phone-only settings must not look operational here. */
+export function settingStatus(def: SettingDef, tv = false) {
+  const implemented = def.type === "action" || def.id.startsWith("projector.") || ["appearance.theme", "appearance.accent", "motion.speed", "motion.focusEffect", "motion.reduce", "performance.visualMode", "performance.pauseHidden", "wallpaper.rotation", "wallpaper.customSeconds", "wallpaper.order", "wallpaper.mix", "wallpaper.pauseOnPlayback", "wallpaper.maxResolution", "profiles.active", "profiles.name", "privacy.history", "storage.uploadQuality", "storage.maxUploads", "input.pointerSpeed", "a11y.highContrast", "notify.duration"].includes(def.id);
+  const availability = tv && (def.action === "open-remote" || def.id === "input.pointerSpeed")
+      ? "demo" : def.availability ?? (implemented ? "local" : "demo");
+  const label = def.secret ? "Em breve · integração de API" : AVAILABILITY_LABEL[availability];
+  return { availability, label, ready: !def.secret && availability === "local" };
+}
 
 export const SPEC_ROTATION_MS: Record<string, number> = {
   "10s": 10_000, "30s": 30_000, "1m": 60_000, "5m": 300_000, "15m": 900_000, "30m": 1_800_000, "1h": 3_600_000, daily: 86_400_000,
