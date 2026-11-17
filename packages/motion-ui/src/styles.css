@@ -1347,3 +1347,19 @@ html[data-surface="tv"] body{overflow:hidden!important;}
  }
  .tv-home .tv-nav-dock nav{height:39px!important;min-height:39px!important;}
 }
+
+
+/* v119 QA: local header contrast on bright art, without altering video or device brightness. */
+.tv-home .tv-scene::after{
+ content:"";position:absolute;z-index:4;top:0;left:0;right:0;
+ height:112px;pointer-events:none;
+ background:linear-gradient(180deg,rgba(5,11,19,.40) 0%,rgba(5,11,19,.17) 45%,rgba(5,11,19,0) 100%)!important;
+}
+.tv-home .tv-clock strong,.tv-home .tv-clock small,
+.tv-home .tv-header .font-display{
+ text-shadow:0 2px 9px rgba(0,0,0,.92)!important;
+}
+.tv-home .tv-scene .smart-artwork{
+ filter:brightness(1.03) saturate(1.01)!important;
+ -webkit-filter:brightness(1.03) saturate(1.01)!important;
+}

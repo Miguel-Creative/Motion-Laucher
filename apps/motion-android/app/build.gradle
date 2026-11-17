@@ -7,8 +7,8 @@ android {
   applicationId 'pro.creativezone.motionlauncher'
   minSdk 21
   targetSdk 32
-  versionCode 10018
-  versionName '1.0.18'
+  versionCode 10019
+  versionName '1.0.19'
  }
  signingConfigs {
   release {
