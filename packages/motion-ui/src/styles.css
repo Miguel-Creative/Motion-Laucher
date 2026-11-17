@@ -1249,3 +1249,101 @@ html[data-surface="tv"] body{overflow:hidden!important;}
  outline-offset:-2px!important;
  border-radius:5px!important;
 }
+
+/* v118 HY300por: centered translucent bottom navigation after favorites; preserve film video settings. */
+/* Old WebView 83: normal flex flow, no fixed positioning and no flex-gap. */
+.tv-home .tv-content {
+  flex:0 0 140px!important;height:140px!important;
+  padding-bottom:3px!important;
+}
+.tv-home .tv-nav-dock {
+  flex:0 0 49px!important;height:49px!important;min-height:49px!important;
+  width:100%!important;box-sizing:border-box!important;
+  display:flex!important;justify-content:center!important;align-items:center!important;
+  padding:0 14px 4px!important;margin:0!important;
+  position:relative!important;z-index:4!important;
+  pointer-events:none;
+}
+.tv-home .tv-nav-dock nav {
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  position:relative!important;left:auto!important;top:auto!important;
+  transform:none!important;
+  width:auto!important;max-width:100%!important;height:41px!important;min-height:41px!important;
+  margin:0!important;padding:2px 8px!important;
+  border-radius:12px!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  background:rgba(8,14,24,.38)!important;
+  box-shadow:0 3px 16px rgba(0,0,0,.09)!important;
+  pointer-events:auto;
+}
+.tv-home .tv-nav-dock nav > * {
+  height:34px!important;min-height:34px!important;
+  padding:0 10px!important;border-radius:8px!important;
+}
+.tv-home .tv-nav-dock nav [class*="text-primary"] {
+  background:rgba(254,177,79,.13)!important;color:#ffc681!important;
+}
+.tv-home .favorite-row .app-tile,
+.tv-home .favorite-row .app-tile-add {
+  background:rgba(10,17,27,.55)!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+}
+.tv-home .tv-personalize {
+  background:rgba(10,17,27,.55)!important;
+  border:1px solid rgba(255,255,255,.28)!important;
+  color:#fff!important;
+  text-shadow:0 1px 5px rgba(0,0,0,.75)!important;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+}
+.tv-home .tv-personalize:hover,.tv-home .tv-personalize:focus-visible {
+  background:rgba(14,22,31,.65)!important;
+  border-color:rgba(255,191,100,.75)!important;
+}
+/* A gentle global lift avoids blown-out highlights; improve visibility by lightening
+   only the local text scrim and bottom fade. Doesn't affect Android brightness or films. */
+.tv-home .tv-scene .smart-artwork {
+  filter:brightness(1.05) saturate(1.01)!important;
+  -webkit-filter:brightness(1.05) saturate(1.01)!important;
+}
+.tv-home .tv-scene .tv-local-scrim {
+  background:linear-gradient(90deg,
+    rgba(3,9,16,.34) 0%,
+    rgba(4,11,19,.12) 37%,
+    rgba(5,12,20,.015) 75%,transparent 100%)!important;
+}
+.tv-home .tv-scene .tv-bottom-fade {
+  background:linear-gradient(0deg,rgba(7,13,20,.30),transparent)!important;
+}
+.tv-home .hero-title,.tv-home .hero-release-date,.tv-home .hero-category {
+  text-shadow:0 2px 11px rgba(0,0,0,.85)!important;
+}
+@media(max-height:540px) {
+ .tv-home .tv-content{flex:0 0 125px!important;height:125px!important;}
+ .tv-home .tv-nav-dock{flex:0 0 45px!important;height:45px!important;min-height:45px!important;}
+ .tv-home .tv-nav-dock nav{height:39px!important;min-height:39px!important;}
+}
+
+/* v118 final QA: readable favorites label and bottom-edge breathing room. */
+.tv-home .rail-heading h2 {
+  color:#f6f8fc!important;
+  text-shadow:0 2px 9px rgba(0,0,0,.84)!important;
+}
+.tv-home .tv-nav-dock{
+  flex:0 0 53px!important;
+  height:53px!important;min-height:53px!important;
+  padding:1px 14px 7px!important;
+}
+.tv-home .tv-nav-dock nav{
+  height:41px!important;min-height:41px!important;
+}
+.tv-home .tv-personalize:focus-visible{
+  outline:1px solid rgba(255,191,100,.9)!important;
+  outline-offset:-2px!important;
+}
+@media(max-height:540px){
+ .tv-home .tv-nav-dock{
+   flex:0 0 48px!important;height:48px!important;min-height:48px!important;
+   padding:1px 10px 6px!important;
+ }
+ .tv-home .tv-nav-dock nav{height:39px!important;min-height:39px!important;}
+}

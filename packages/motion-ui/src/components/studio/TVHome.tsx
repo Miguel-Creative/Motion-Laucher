@@ -109,8 +109,6 @@ export function TVHome() {
           </Button>
         </div>
       </section>
-      <div className="tv-nav-dock"><Navigation /></div>
-
       <section className="tv-content" aria-label="Aplicativos favoritos">
         <div className="rail-heading">
           <h2>Seus favoritos</h2>
@@ -131,6 +129,7 @@ export function TVHome() {
           </Button>
         </div>
       </section>
+      <div className="tv-nav-dock" aria-label="Menu inferior"><Navigation /></div>
     </main>
   </div>;
 }
