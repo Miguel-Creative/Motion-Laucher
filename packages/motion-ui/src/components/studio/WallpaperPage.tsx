@@ -153,7 +153,7 @@ export function WallpaperPage() {
         <aside className="wp-details" aria-label="Prévia e personalização">
           <div className="wp-panel-tabs">
             <Button data-nav className="wp-panel-tab" aria-pressed={panel==="detail"} onClick={()=>setPanel("detail")}><Eye size={15}/>Prévia</Button>
-            <Button data-nav className="wp-panel-tab" aria-pressed={panel==="settings"} onClick={()=>setPanel("settings")}><Settings2 size={15}/>Ajustes</Button>
+            <Button data-nav className="wp-panel-tab" aria-pressed={panel==="settings"} onClick={()=>setPanel("settings")}><Settings2 size={15}/>Personalizar tela</Button>
           </div>
           {panel==="detail" ?
           <div className="wp-detail-body">

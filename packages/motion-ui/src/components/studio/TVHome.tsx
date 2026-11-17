@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Plus, Gamepad2, SlidersHorizontal, ChevronRight } from "lucide-react";
+import { Plus, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Brand, Navigation } from "./Shell";
 import { Artwork } from "./Artwork";
@@ -105,19 +105,15 @@ export function TVHome() {
           <h1 key={wallpaper.id} className="hero-title tv-title-enter" title={wallpaper.title}>{wallpaper.title}</h1>
           {wallpaper.genres.length > 0 && <p className="hero-details">{wallpaper.genres.slice(0, 2).join(" · ")}</p>}
           <p className="hero-release-date" aria-label={readyHero?"Data de lançamento":"Status dos wallpapers"}>{readyHero?formatReleaseDate(wallpaper):"Aguardando artes do catálogo"}</p>
-          <Button data-nav data-nav-default asChild className="tv-personalize tv-focusable" size="lg">
-            <Link to="/wallpapers"><SlidersHorizontal size={18}/>Personalizar tela</Link>
-          </Button>
         </div>
       </section>
       <section className="tv-content" aria-label="Aplicativos favoritos">
         <div className="rail-heading">
           <h2>Seus favoritos</h2>
-          <Button asChild variant="ghost" size="sm"><Link data-nav to="/library">Todos os apps<ChevronRight size={16}/></Link></Button>
         </div>
         <div className="favorite-row">
-          {favorites.slice(0, 7).map(app => <Button
-            key={app.pkg} data-nav variant="secondary"
+          {favorites.slice(0, 7).map((app, index) => <Button
+            key={app.pkg} data-nav data-nav-default={index===0 ? "" : undefined} variant="secondary"
             className={"app-tile tv-focusable " + (app.nativeIcon ? "app-tile-native " : APP_TONES[app.tone] ?? "")}
             onClick={() => launchApp(app.id)}
           >{app.nativeIcon
@@ -126,7 +122,7 @@ export function TVHome() {
             <span>{app.name}</span>
           </Button>)}
           <Button asChild variant="outline" className="app-tile app-tile-add tv-focusable">
-            <Link data-nav to="/library"><Plus/><span>Adicionar</span></Link>
+            <Link data-nav data-nav-default={favorites.length===0 ? "" : undefined} to="/library"><Plus/><span>Adicionar</span></Link>
           </Button>
         </div>
       </section>
