@@ -1363,3 +1363,19 @@ html[data-surface="tv"] body{overflow:hidden!important;}
  filter:brightness(1.03) saturate(1.01)!important;
  -webkit-filter:brightness(1.03) saturate(1.01)!important;
 }
+
+
+/* TV wallpaper gallery QA: six compact cards at 720p/1080p instead of
+   three tall empty placeholders. Keep the 3-card layout on short WebViews. */
+.wp-grid {
+  grid-template-rows:repeat(2,minmax(0,1fr))!important;
+}
+.wp-card-art {
+  flex:1 1 auto!important;
+  height:auto!important;
+  min-height:0!important;
+}
+@media (max-height:620px) {
+  .wp-grid {grid-template-rows:minmax(0,1fr)!important;}
+  .wp-card-art {flex:0 0 102px!important;height:102px!important;min-height:102px!important;}
+}

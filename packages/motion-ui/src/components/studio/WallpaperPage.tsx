@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Check, Heart, Image as ImageIcon, Search, Settings2, Upload, X, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Shell } from "./Shell";
@@ -14,7 +14,8 @@ import type { Wallpaper } from "@/data/wallpapers";
 import { useCatalogHealth, loadArtVariants, FEED_OPTIONS, getSelectedFeed, setSelectedFeed, type EditorialFeed } from "@/lib/catalog/live";
 
 const FILTERS = ["Todos", "Anime", "Filmes", "Séries", "Jogos", "Favoritos", "Meus Wallpapers", "Fantasia", "Sci-Fi"];
-const PAGE_SIZE = 3;
+const COMPACT_TV_MAX_HEIGHT = 620;
+const pageSizeForViewport = () => typeof window === "undefined" || window.innerHeight > COMPACT_TV_MAX_HEIGHT ? 6 : 3;
 
 function matchCategory(w: Wallpaper, filter: string, favorites: string[]) {
   if (filter === "Todos") return true;
@@ -37,6 +38,12 @@ export function WallpaperPage() {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(pageSizeForViewport);
+  useEffect(() => {
+    const syncViewport = () => setPageSize(pageSizeForViewport());
+    window.addEventListener("resize", syncViewport);
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panel, setPanel] = useState<"detail" | "settings">("detail");
   const [showOriginal, setShowOriginal] = useState(false);
@@ -47,9 +54,9 @@ export function WallpaperPage() {
     matchCategory(w, category, favorites) &&
     (query.trim() === "" || (w.title + " " + w.genres.join(" ")).toLocaleLowerCase("pt-BR").includes(query.trim().toLocaleLowerCase("pt-BR")))
   );
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pageCount - 1);
-  const currentPage = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const currentPage = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize);
   const selected = currentPage.find(w => w.id === selectedId) ?? currentPage[0] ?? wallpaper;
   const applied = wallpaper.id === selected.id;
 
