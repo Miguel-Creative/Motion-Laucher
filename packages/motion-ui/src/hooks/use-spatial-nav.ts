@@ -90,7 +90,7 @@ export function focusFirst() {
 export function useSpatialNav(onBack?: () => void) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.defaultPrevented) return;
+      if (e.defaultPrevented || document.querySelector("[data-ambient-active]")) return;
       const active = document.activeElement as HTMLElement | null;
       const inEditable = !!active && isEditable(active);
 

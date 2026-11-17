@@ -16,6 +16,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.KeyEvent;
+import android.view.Gravity;
+import android.widget.FrameLayout;
+import android.widget.VideoView;
+import java.io.File;
+import java.io.FileOutputStream;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -40,6 +46,11 @@ public class MainActivity extends Activity {
     private static final String OFFLINE_HOST = "motion-offline.invalid";
     private static final String LIVE_URL = "https://" + LIVE_HOST + "/";
     private WebView web;
+    private FrameLayout root;
+    private VideoView fireVideo;
+    private File fireTemp;
+    private int fireIndex = 0;
+    private static final String[] FIRE_FILES = {"classic", "cozy", "logs"};
     private boolean inOfflineMode = false;
     private volatile String cachedAppsJson;
     private ConnectivityManager networkManager;
@@ -71,7 +82,9 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new NativeBridge(), "MotionNative");
         web.setWebChromeClient(new WebChromeClient() { @Override public boolean onConsoleMessage(ConsoleMessage msg) { Log.e("MotionUI",msg.message()); return true; } });
         web.setWebViewClient(new MotionWebClient());
-        setContentView(web);
+        root = new FrameLayout(this);
+        root.addView(web, new FrameLayout.LayoutParams(-1,-1));
+        setContentView(root);
         // When Wi-Fi returns, refresh the clock and restore the live UI if offline.
         if (Build.VERSION.SDK_INT >= 24) {
             try {
@@ -140,6 +153,7 @@ public class MainActivity extends Activity {
                 String ext = path.toLowerCase(Locale.ROOT);
                 String mime = ext.endsWith(".js") ? "application/javascript" :
                     ext.endsWith(".css") ? "text/css" :
+                    ext.endsWith(".mp4") ? "video/mp4" :
                     ext.endsWith(".webp") ? "image/webp" :
                     ext.endsWith(".jpg") || ext.endsWith(".jpeg") ? "image/jpeg" :
                     ext.endsWith(".png") ? "image/png" :
@@ -158,8 +172,89 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Only one local video decoder is active; no streaming or animated thumbnails. */
+    private void releaseFireVideo() {
+        if (fireVideo != null) {
+            fireVideo.stopPlayback();
+            root.removeView(fireVideo);
+            fireVideo = null;
+        }
+        if (fireTemp != null) {
+            fireTemp.delete();
+            fireTemp = null;
+        }
+    }
+
+    private void closeFireplace() {
+        releaseFireVideo();
+        if (web != null) {
+            web.setVisibility(View.VISIBLE);
+            web.requestFocus();
+            web.evaluateJavascript("window.dispatchEvent(new Event('motion-fireplace-closed'))", null);
+        }
+    }
+
+    private void playFireplace(int index) {
+        if (index < 0 || index >= FIRE_FILES.length || root == null || web == null) return;
+        releaseFireVideo();
+        fireIndex = index;
+        try {
+            fireTemp = File.createTempFile("motion-fire-", ".mp4", getCacheDir());
+            try (InputStream input = getAssets().open("webroot/ambient/" + FIRE_FILES[index] + ".mp4");
+                 FileOutputStream out = new FileOutputStream(fireTemp)) {
+                byte[] buffer = new byte[32768];
+                int count;
+                while ((count = input.read(buffer)) != -1) out.write(buffer, 0, count);
+            }
+            web.setVisibility(View.INVISIBLE);
+            root.setBackgroundColor(Color.BLACK);
+            final VideoView video = new VideoView(this);
+            fireVideo = video;
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER);
+            root.addView(video, params);
+            video.setOnPreparedListener(player -> {
+                if (fireVideo != video) return;
+                player.setLooping(true);
+                player.setVolume(0f, 0f);
+                video.start();
+            });
+            video.setOnErrorListener((player, what, extra) -> {
+                if (fireVideo == video) {
+                    Toast.makeText(this, "Não foi possível reproduzir a lareira", Toast.LENGTH_SHORT).show();
+                    closeFireplace();
+                }
+                return true;
+            });
+            video.setOnClickListener(v -> closeFireplace());
+            video.setVideoPath(fireTemp.getAbsolutePath());
+            video.requestFocus();
+        } catch (Exception e) {
+            Log.e("MotionUI", "Fireplace unavailable", e);
+            closeFireplace();
+            Toast.makeText(this, "Lareira indisponível", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override public boolean dispatchKeyEvent(KeyEvent event) {
+        if (fireVideo != null) {
+            int key = event.getKeyCode();
+            if (key == KeyEvent.KEYCODE_BACK || key == KeyEvent.KEYCODE_ENTER || key == KeyEvent.KEYCODE_DPAD_CENTER ||
+                key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                if (event.getAction() == KeyEvent.ACTION_UP) {
+                    if (key == KeyEvent.KEYCODE_DPAD_LEFT) playFireplace((fireIndex + FIRE_FILES.length - 1) % FIRE_FILES.length);
+                    else if (key == KeyEvent.KEYCODE_DPAD_RIGHT) playFireplace((fireIndex + 1) % FIRE_FILES.length);
+                    else closeFireplace();
+                }
+                return true;
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
     public final class NativeBridge {
         @JavascriptInterface public boolean isNative() { return true; }
+
+        @JavascriptInterface public void openFireplace(int index) { runOnUiThread(() -> playFireplace(index)); }
 
         @JavascriptInterface public String getInstalledApps() {
             if (cachedAppsJson != null) return cachedAppsJson;
@@ -241,8 +336,13 @@ public class MainActivity extends Activity {
     }
 
     @Override public void onBackPressed() {
-        if (web != null && web.canGoBack()) web.goBack();
-        else if (web != null) web.evaluateJavascript("window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))", null);
+        if (fireVideo != null) { closeFireplace(); return; }
+        if (web != null) web.evaluateJavascript("(function(){if(document.querySelector('[data-ambient-active]')){window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));return true;}return false;})()", result -> {
+            if (!"true".equals(result) && web != null) {
+                if (web.canGoBack()) web.goBack();
+                else web.evaluateJavascript("window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))", null);
+            }
+        });
     }
 
     @Override protected void onResume() {
@@ -250,10 +350,12 @@ public class MainActivity extends Activity {
         if (web != null) web.onResume();
     }
     @Override protected void onPause() {
+        if (fireVideo != null) closeFireplace();
         if (web != null) web.onPause();
         super.onPause();
     }
     @Override protected void onDestroy() {
+        releaseFireVideo();
         if (networkManager != null && networkCallback != null) {
             try { networkManager.unregisterNetworkCallback(networkCallback); }
             catch (Exception ignored) {}
