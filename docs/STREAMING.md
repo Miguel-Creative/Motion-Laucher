@@ -9,3 +9,5 @@ O Android usa Media3 HLS/MP4, limite preferencial 720p, buffer limitado e um pla
 - Filmes: Sita Sings the Blues (longa liberado pela autora: https://www.sitasingstheblues.com/watch.html), WING IT! e Singularity (2026, Blender Studio). Singularity tem fonte MP4 1080p no PeerTube oficial: preferir qualidade reduzida quando existir.
 - Abas Lançamentos (obras recentes realmente disponíveis) e Continuar assistindo (progresso local nativo).
 - Gerenciador acessível em Ajustes e Biblioteca; tamanho de APK medido, ações de cache/desativação nos detalhes oficiais do Android. Não simula sucesso. Nenhum acesso elevado.
+
+Verificação ffprobe na VPS: todos os 8 canais e os 10 vídeos VOD disponibilizaram stream H.264 em 17/11/2026 (Charge após correção da URL). Isso não substitui teste no HY300por.

@@ -263,7 +263,7 @@ public class MainActivity extends Activity {
             case "sintel": return "https://video.blender.org/object-storage/web_videos/0eb052d0-fd51-43e6-aa33-ecdbf77a5d40-480.mp4";
             case "tears": return "https://video.blender.org/object-storage/web_videos/8533ea43-4271-4a57-9694-e9d0b35e1aa1-480.mp4";
             case "sprite": return "https://video.blender.org/object-storage/web_videos/a69d68a5-a0e0-4a80-9d66-49f093c97aaf-720.mp4";
-            case "charge": return "https://video.blender.org/object-storage/web_videos/70528f27-fd51-479f-8144-4da805fbe4ba-720.mp4";
+            case "charge": return "https://video.blender.org/object-storage/web_videos/70528f27-fd51-479f-8146-abb5a7a81fff-720.mp4";
             case "cam2": return "https://video.blender.org/object-storage/web_videos/fb70d459-48d2-4db5-adba-813c84f9200a-480.mp4";
             case "cam3": return "https://video.blender.org/object-storage/web_videos/23f3ef79-15dc-44c5-aa45-cf92e78a4509-480.mp4";
             default: return null;
