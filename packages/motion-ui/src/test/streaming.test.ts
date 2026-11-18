@@ -1,5 +1,12 @@
 import { describe,it,expect } from "vitest";
-import { MEDIA,mediaFor,entriesForTab } from "@/lib/streaming";
-describe("Streaming",()=>{it("separa TV brasileira da internacional e mantém fontes HTTPS",()=>{expect(mediaFor("br")).toHaveLength(6);expect(mediaFor("international")).toHaveLength(2);expect(MEDIA.every(m=>m.src.startsWith("https://"))).toBe(true);expect(new Set(MEDIA.map(m=>m.id)).size).toBe(MEDIA.length);});it("oferece obras abertas reais sem incluir catálogos comerciais fictícios",()=>{expect(mediaFor("movie")).toHaveLength(8);expect(mediaFor("series")).toHaveLength(2);expect(mediaFor("movie").every(m=>m.src.endsWith(".mp4"))).toBe(true);});});
-
-it("separa lançamentos reais e retomadas de VOD",()=>{expect(entriesForTab("recent").map(m=>m.id)).toEqual(["singularity"]);expect(entriesForTab("resume",["tvbrasil","sita","invalid"]).map(m=>m.id)).toEqual(["sita"]);});
+import { MEDIA,mediaFor,entriesForTab,MEDIA_TABS } from "@/lib/streaming";
+describe("TV brasileira",()=>{
+ it("prioriza emissoras populares e não confunde sites oficiais com sinais diretos",()=>{
+ expect(MEDIA.slice(0,5).map(m=>m.id)).toEqual(["globo","sbt","record","band","redetv"]);
+ expect(MEDIA.every(m=>m.official.startsWith("https://")&&(!m.src||m.src.startsWith("https://")))).toBe(true);
+ expect(MEDIA.filter(m=>m.src).length).toBeGreaterThan(0);
+ expect(new Set(MEDIA.map(m=>m.id)).size).toBe(MEDIA.length);
+ expect(MEDIA_TABS.map(m=>m.id)).toEqual(["br"]);
+ });
+ it("retira o catálogo que foi rejeitado",()=>{for(const k of ["international","movie","series"] as const)expect(mediaFor(k)).toEqual([]);expect(entriesForTab("recent")).toEqual([]);});
+});

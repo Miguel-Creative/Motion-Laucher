@@ -60,6 +60,8 @@ public class MainActivity extends Activity {
     private String mediaId;
     private File fireTemp;
     private int fireIndex = 0;
+    private long fireOpenedAt = 0;
+    private int fireKeyDown = -1;
     private static final String[] FIRE_FILES = {"classic", "cozy", "logs"};
     private boolean inOfflineMode = false;
     private volatile String cachedAppsJson;
@@ -197,6 +199,7 @@ public class MainActivity extends Activity {
 
     private void closeFireplace() {
         releaseFireVideo();
+        getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         if (web != null) {
             web.setVisibility(View.VISIBLE);
             web.requestFocus();
@@ -208,6 +211,8 @@ public class MainActivity extends Activity {
         if (index < 0 || index >= FIRE_FILES.length || root == null || web == null) return;
         releaseFireVideo();
         fireIndex = index;
+        fireOpenedAt = android.os.SystemClock.uptimeMillis();
+        fireKeyDown = -1;
         try {
             fireTemp = File.createTempFile("motion-fire-", ".mp4", getCacheDir());
             try (InputStream input = getAssets().open("webroot/ambient/" + FIRE_FILES[index] + ".mp4");
@@ -225,17 +230,19 @@ public class MainActivity extends Activity {
             video.setOnPreparedListener(player -> {
                 if (fireVideo != video) return;
                 player.setLooping(true);
+                getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 player.setVolume(0f, 0f);
                 video.start();
             });
             video.setOnErrorListener((player, what, extra) -> {
                 if (fireVideo == video) {
                     Toast.makeText(this, "Não foi possível reproduzir a lareira", Toast.LENGTH_SHORT).show();
+                    Log.e("MotionUI", "Fireplace playback error " + what + "/" + extra);
                     closeFireplace();
                 }
                 return true;
             });
-            video.setOnClickListener(v -> closeFireplace());
+            video.setOnClickListener(v -> { if(android.os.SystemClock.uptimeMillis()-fireOpenedAt>650) closeFireplace(); });
             video.setVideoPath(fireTemp.getAbsolutePath());
             video.requestFocus();
         } catch (Exception e) {
@@ -246,27 +253,24 @@ public class MainActivity extends Activity {
     }
 
     private String approvedMediaUrl(String id) {
-        if (id == null) return null;
-        switch (id) {
-            case "tvcultura": return "https://player-tvcultura.stream.uol.com.br/live/tvcultura.m3u8";
+        if(id==null)return null;
+        switch(id){
+            case "sbtinterior": return "https://cdn.jmvstream.com/w/LVW-10801/LVW10801_Xvg4R0u57n/playlist.m3u8";
             case "recordnews": return "https://rnw-rn.otteravision.com/rnw/rn/rnw_rn.m3u8";
-            case "redebrasil": return "https://video09.logicahost.com.br/redebrasiloficial/redebrasiloficial/playlist.m3u8";
-            case "sita": return "https://archive.org/download/Sita_Sings_the_Blues/Sita_Sings_the_Blues_480p_2150kbps.mp4";
-            case "wingit": return "https://video.blender.org/object-storage/web_videos/1be4c93c-1fd2-498d-adc7-50126823033e-480.mp4";
-            case "singularity": return "https://video.blender.org/object-storage/web_videos/f91fd74e-a81f-48ec-b92b-c9504ac46e31-1080.mp4";
-            case "tvbrasil": return "https://tvbrasil-stream.ebc.com.br/index.m3u8";
-            case "canalgov": return "https://canalgov-stream.ebc.com.br/index.m3u8";
-            case "tvcamara": return "https://stream3.camara.gov.br/tv1/manifest.m3u8";
-            case "france24": return "https://live.france24.com/hls/live/2037218/F24_EN_HI_HLS/master_5000.m3u8";
-            case "dw": return "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8";
-            case "bunny": return "https://video.blender.org/object-storage/web_videos/6402b77c-b61f-4a06-96ca-c8420a2becf4-480.mp4";
-            case "sintel": return "https://video.blender.org/object-storage/web_videos/0eb052d0-fd51-43e6-aa33-ecdbf77a5d40-480.mp4";
-            case "tears": return "https://video.blender.org/object-storage/web_videos/8533ea43-4271-4a57-9694-e9d0b35e1aa1-480.mp4";
-            case "sprite": return "https://video.blender.org/object-storage/web_videos/a69d68a5-a0e0-4a80-9d66-49f093c97aaf-720.mp4";
-            case "charge": return "https://video.blender.org/object-storage/web_videos/70528f27-fd51-479f-8146-abb5a7a81fff-720.mp4";
-            case "cam2": return "https://video.blender.org/object-storage/web_videos/fb70d459-48d2-4db5-adba-813c84f9200a-480.mp4";
-            case "cam3": return "https://video.blender.org/object-storage/web_videos/23f3ef79-15dc-44c5-aa45-cf92e78a4509-480.mp4";
-            default: return null;
+            case "tvcultura": return "https://player-tvcultura.stream.uol.com.br/live/tvcultura.m3u8";
+            default:return null;
+        }
+    }
+    private String officialChannelUrl(String id) {
+        if(id==null)return null;
+        switch(id){
+            case "globo": return "https://globoplay.globo.com/agora-na-tv/";
+            case "sbt": return "https://www.sbt.com.br/ao-vivo";
+            case "record": return "https://descubra.recordplus.com/";
+            case "band": return "https://www.band.com.br/ao-vivo";
+            case "redetv": return "https://www.redetv.uol.com.br/aovivo";
+            case "gazeta": return "https://www.tvgazeta.com.br/aovivo/";
+            default:return null;
         }
     }
     private void closeMedia(boolean notify) {
@@ -288,7 +292,12 @@ public class MainActivity extends Activity {
     }
     private void playApprovedMedia(String id) {
         String url=approvedMediaUrl(id);
-        if(url==null || web==null || root==null) return;
+        if(url==null){
+            String official=officialChannelUrl(id);
+            if(official!=null){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(official)));}catch(Exception e){Toast.makeText(this,"Não há navegador disponível",Toast.LENGTH_SHORT).show();}}
+            return;
+        }
+        if(web==null || root==null)return;
         if(fireVideo!=null)closeFireplace();
         closeMedia(false);
         mediaId=id;liveMedia=url.endsWith(".m3u8");
@@ -322,7 +331,11 @@ public class MainActivity extends Activity {
             int key = event.getKeyCode();
             if (key == KeyEvent.KEYCODE_BACK || key == KeyEvent.KEYCODE_ENTER || key == KeyEvent.KEYCODE_DPAD_CENTER ||
                 key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                if (event.getAction() == KeyEvent.ACTION_UP) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount()==0) {
+                    fireKeyDown = android.os.SystemClock.uptimeMillis()-fireOpenedAt>500 ? key : -1;
+                }
+                if (event.getAction() == KeyEvent.ACTION_UP && fireKeyDown==key) {
+                    fireKeyDown=-1;
                     if (key == KeyEvent.KEYCODE_DPAD_LEFT) playFireplace((fireIndex + FIRE_FILES.length - 1) % FIRE_FILES.length);
                     else if (key == KeyEvent.KEYCODE_DPAD_RIGHT) playFireplace((fireIndex + 1) % FIRE_FILES.length);
                     else closeFireplace();
@@ -470,7 +483,7 @@ public class MainActivity extends Activity {
     @Override public void onBackPressed() {
         if(mediaPlayer!=null){closeMedia(true);return;}
         if (fireVideo != null) { closeFireplace(); return; }
-        if (web != null) web.evaluateJavascript("(function(){if(document.querySelector('[data-ambient-active]')){window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));return true;}return false;})()", result -> {
+        if (web != null) web.evaluateJavascript("(function(){if(document.querySelector('[data-ambient-active], [role=dialog][data-state=open]')){window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));return true;}return false;})()", result -> {
             if (!"true".equals(result) && web != null) {
                 if (web.canGoBack()) web.goBack();
                 else web.evaluateJavascript("window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))", null);
