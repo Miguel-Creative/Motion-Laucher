@@ -358,6 +358,9 @@ public class MainActivity extends Activity {
                     row.put("pkg",app.packageName);row.put("name",pm.getApplicationLabel(app).toString());
                     row.put("enabled",app.enabled);row.put("system",(app.flags&ApplicationInfo.FLAG_SYSTEM)!=0);
                     row.put("version",pm.getPackageInfo(app.packageName,0).versionName);
+                    long apkBytes=app.sourceDir==null?0:new File(app.sourceDir).length();
+                    if(app.splitSourceDirs!=null)for(String split:app.splitSourceDirs)apkBytes+=new File(split).length();
+                    row.put("apkBytes",apkBytes);
                     row.put("self",app.packageName.equals(getPackageName()));
                     row.put("launchable",pm.getLeanbackLaunchIntentForPackage(app.packageName)!=null||pm.getLaunchIntentForPackage(app.packageName)!=null);
                     result.put(row);
@@ -391,7 +394,7 @@ public class MainActivity extends Activity {
             PackageManager pm = getPackageManager();
             List<ApplicationInfo> installed = pm.getInstalledApplications(0);
             for (ApplicationInfo app : installed) {
-                if (app.packageName.equals(getPackageName()) ||
+                if (!app.enabled || app.packageName.equals(getPackageName()) ||
                     app.packageName.equals("pro.creativezone.hy300launcher")) continue;
                 Intent open = pm.getLeanbackLaunchIntentForPackage(app.packageName);
                 if (open == null) open = pm.getLaunchIntentForPackage(app.packageName);

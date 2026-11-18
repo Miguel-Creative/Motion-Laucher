@@ -21,7 +21,7 @@ declare global {
 interface NativeEntry { pkg: string; name: string; system: boolean; icon?: string }
 let cachedNativeApps: LauncherApp[] | null = null;
 if(typeof window!=="undefined")window.addEventListener("motion-apps-changed",()=>{cachedNativeApps=null;});
-export interface ManagedApp {pkg:string;name:string;enabled:boolean;system:boolean;version:string;launchable:boolean;self:boolean}
+export interface ManagedApp {pkg:string;name:string;enabled:boolean;system:boolean;version:string;launchable:boolean;self:boolean;apkBytes?:number}
 export function getManagedApps():ManagedApp[]{try{const items=JSON.parse(window.MotionNative?.getManagedApps?.()??"[]");return Array.isArray(items)?items.filter((x:ManagedApp)=>x.pkg&&x.name):[];}catch{return [];}}
 export function isNativeLauncher(): boolean {
   return typeof window !== "undefined" && !!window.MotionNative?.isNative?.();
