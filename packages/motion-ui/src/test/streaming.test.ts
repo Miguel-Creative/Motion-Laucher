@@ -1,3 +1,5 @@
 import { describe,it,expect } from "vitest";
-import { MEDIA,mediaFor } from "@/lib/streaming";
-describe("Streaming",()=>{it("separa TV brasileira da internacional e mantém fontes HTTPS",()=>{expect(mediaFor("br")).toHaveLength(3);expect(mediaFor("international")).toHaveLength(2);expect(MEDIA.every(m=>m.src.startsWith("https://"))).toBe(true);expect(new Set(MEDIA.map(m=>m.id)).size).toBe(MEDIA.length);});it("oferece obras abertas reais sem incluir catálogos comerciais fictícios",()=>{expect(mediaFor("movie")).toHaveLength(5);expect(mediaFor("series")).toHaveLength(2);expect(mediaFor("movie").every(m=>m.src.endsWith(".mp4"))).toBe(true);});});
+import { MEDIA,mediaFor,entriesForTab } from "@/lib/streaming";
+describe("Streaming",()=>{it("separa TV brasileira da internacional e mantém fontes HTTPS",()=>{expect(mediaFor("br")).toHaveLength(6);expect(mediaFor("international")).toHaveLength(2);expect(MEDIA.every(m=>m.src.startsWith("https://"))).toBe(true);expect(new Set(MEDIA.map(m=>m.id)).size).toBe(MEDIA.length);});it("oferece obras abertas reais sem incluir catálogos comerciais fictícios",()=>{expect(mediaFor("movie")).toHaveLength(8);expect(mediaFor("series")).toHaveLength(2);expect(mediaFor("movie").every(m=>m.src.endsWith(".mp4"))).toBe(true);});});
+
+it("separa lançamentos reais e retomadas de VOD",()=>{expect(entriesForTab("recent").map(m=>m.id)).toEqual(["singularity"]);expect(entriesForTab("resume",["tvbrasil","sita","invalid"]).map(m=>m.id)).toEqual(["sita"]);});

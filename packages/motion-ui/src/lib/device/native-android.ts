@@ -12,6 +12,7 @@ export interface MotionNativeBridge {
   openAppDetails?(pkg:string): void;
   requestUninstall?(pkg:string): void;
   playMedia?(id:string): void;
+  getResumeMedia?():string;
 }
 declare global {
   interface Window { MotionNative?: MotionNativeBridge }

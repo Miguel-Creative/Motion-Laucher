@@ -1,6 +1,12 @@
 export type MediaKind="br"|"international"|"movie"|"series";
 export interface MediaEntry {id:string;title:string;kind:MediaKind;info:string;src:string;official:string;poster?:string}
 export const MEDIA:MediaEntry[]=[
+{"id":"tvcultura","title":"TV Cultura","kind":"br","info":"Brasil · Cultura e entretenimento","src":"https://player-tvcultura.stream.uol.com.br/live/tvcultura.m3u8","official":"https://cultura.uol.com.br/aovivo/107_ao-vivo-tv-cultura.html"},
+{"id":"recordnews","title":"Record News","kind":"br","info":"Brasil · Notícias","src":"https://rnw-rn.otteravision.com/rnw/rn/rnw_rn.m3u8","official":"https://noticias.r7.com/record-news/"},
+{"id":"redebrasil","title":"Rede Brasil","kind":"br","info":"Brasil · Entretenimento","src":"https://video09.logicahost.com.br/redebrasiloficial/redebrasiloficial/playlist.m3u8","official":"https://rbtv.com.br/"},
+{"id":"sita","title":"Sita Sings the Blues","kind":"movie","info":"2008 · Animação · Longa-metragem · Obra aberta","src":"https://archive.org/download/Sita_Sings_the_Blues/Sita_Sings_the_Blues_480p_2150kbps.mp4","official":"https://www.sitasingstheblues.com/watch.html"},
+{"id":"wingit","title":"WING IT!","kind":"movie","info":"2023 · Animação · 4 min · Obra aberta","src":"https://video.blender.org/object-storage/web_videos/1be4c93c-1fd2-498d-adc7-50126823033e-480.mp4","poster":"https://video.blender.org/lazy-static/thumbnails/4efa0a16-83b0-4c62-a4bc-4dcd30c05749.jpg","official":"https://video.blender.org/videos/watch/bd0084a5-1d26-4816-ab5e-1bad9e2fb990"},
+{"id":"singularity","title":"Singularity","kind":"movie","info":"2026 · Animação · 6 min · Lançamento aberto","src":"https://video.blender.org/object-storage/web_videos/f91fd74e-a81f-48ec-b92b-c9504ac46e31-1080.mp4","poster":"https://video.blender.org/lazy-static/thumbnails/38b6e48a-40e7-4c46-801f-9a46baf9c02a.jpg","official":"https://studio.blender.org/projects/singularity/"},
   {
     "id": "tvbrasil",
     "title": "TV Brasil",
@@ -107,3 +113,6 @@ export const MEDIA:MediaEntry[]=[
 ];
 export const MEDIA_TABS=[{id:"br",label:"TV brasileira"},{id:"international",label:"TV internacional"},{id:"movie",label:"Filmes"},{id:"series",label:"Séries"}] as const;
 export function mediaFor(kind:MediaKind){return MEDIA.filter(m=>m.kind===kind);}
+
+export type MediaTab=MediaKind|"recent"|"resume";
+export function entriesForTab(tab:MediaTab,resumeIds:string[]=[]){if(tab==="recent")return MEDIA.filter(m=>m.kind==="movie"&&m.info.startsWith("2026"));if(tab==="resume")return resumeIds.map(id=>MEDIA.find(m=>m.id===id&&(m.kind==="movie"||m.kind==="series"))).filter((m):m is MediaEntry=>!!m);return mediaFor(tab);}

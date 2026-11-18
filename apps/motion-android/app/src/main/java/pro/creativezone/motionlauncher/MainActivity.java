@@ -248,6 +248,12 @@ public class MainActivity extends Activity {
     private String approvedMediaUrl(String id) {
         if (id == null) return null;
         switch (id) {
+            case "tvcultura": return "https://player-tvcultura.stream.uol.com.br/live/tvcultura.m3u8";
+            case "recordnews": return "https://rnw-rn.otteravision.com/rnw/rn/rnw_rn.m3u8";
+            case "redebrasil": return "https://video09.logicahost.com.br/redebrasiloficial/redebrasiloficial/playlist.m3u8";
+            case "sita": return "https://archive.org/download/Sita_Sings_the_Blues/Sita_Sings_the_Blues_480p_2150kbps.mp4";
+            case "wingit": return "https://video.blender.org/object-storage/web_videos/1be4c93c-1fd2-498d-adc7-50126823033e-480.mp4";
+            case "singularity": return "https://video.blender.org/object-storage/web_videos/f91fd74e-a81f-48ec-b92b-c9504ac46e31-1080.mp4";
             case "tvbrasil": return "https://tvbrasil-stream.ebc.com.br/index.m3u8";
             case "canalgov": return "https://canalgov-stream.ebc.com.br/index.m3u8";
             case "tvcamara": return "https://stream3.camara.gov.br/tv1/manifest.m3u8";
@@ -331,6 +337,18 @@ public class MainActivity extends Activity {
         @JavascriptInterface public boolean isNative() { return true; }
 
         @JavascriptInterface public void playMedia(String id) { runOnUiThread(()->playApprovedMedia(id)); }
+        @JavascriptInterface public String getResumeMedia() {
+            JSONArray ids=new JSONArray();
+            java.util.Map<String,?> values=getPreferences(MODE_PRIVATE).getAll();
+            for(java.util.Map.Entry<String,?> v:values.entrySet()) {
+                if(v.getKey().startsWith("resume:") && v.getValue() instanceof Long && ((Long)v.getValue())>10000L) {
+                    String id=v.getKey().substring(7);
+                    String url=approvedMediaUrl(id);
+                    if(url!=null && !url.endsWith(".m3u8")) ids.put(id);
+                }
+            }
+            return ids.toString();
+        }
 
         @JavascriptInterface public String getManagedApps() {
             JSONArray result=new JSONArray();PackageManager pm=getPackageManager();
