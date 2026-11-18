@@ -631,3 +631,27 @@ html,body,#root { width:100%;height:100%;margin:0; }
 .ambient-picker-credit {font-size:11px!important;color:#b9c7d8!important;}
 @media(max-width:650px){.tv-home .tv-nav-dock nav .ambient-nav-button span {display:none!important;}.tv-home .tv-nav-dock nav .ambient-nav-button svg {margin-right:0!important;}}
 @media(max-height:540px){.ambient-picker{padding:14px!important;}.ambient-pick img{height:90px!important;}.ambient-picker-grid{grid-gap:8px!important;}}
+
+/* Compact, D-pad-first entertainment and installed application management. */
+.motion-media-shell .studio-header nav {max-width:75%!important;}
+.motion-media-shell .motion-media-tabs {display:flex!important;flex:none!important;align-items:center!important;flex-wrap:wrap!important;margin:0 0 8px!important;}
+.motion-media-tabs button,.motion-media-tabs>a {margin:0 6px 5px 0!important;}
+.motion-media-shell .motion-media-body {display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:0!important;overflow:hidden!important;}
+.motion-media-shell .motion-media-scroll {flex:1 1 auto!important;min-height:0!important;overflow:auto!important;padding:4px!important;}
+.motion-media-grid {display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-gap:10px!important;}
+.motion-media-card {display:flex!important;flex-direction:column!important;min-width:0!important;padding:12px!important;min-height:103px!important;background:#233247!important;border:1px solid #41546b!important;border-radius:10px!important;color:#f2f6ff!important;align-items:flex-start!important;text-align:left!important;white-space:normal!important;}
+.motion-media-card img {width:100%!important;height:82px!important;object-fit:cover!important;border-radius:6px!important;margin-bottom:7px!important;}
+.motion-media-card strong{font-size:15px!important;line-height:1.2!important;margin:5px 0!important;}
+.motion-media-card small{color:#b6c5d6!important;font-size:12px!important;line-height:1.3!important;}
+.motion-media-shell [data-nav]:focus {outline:2px solid #ffc075!important;outline-offset:1px!important;box-shadow:none!important;}
+.motion-media-note {flex:none!important;color:#b8c8da!important;font-size:11px!important;margin:6px 0 0!important;}
+.motion-app-row{display:flex!important;flex-direction:column!important;align-items:flex-start!important;width:100%!important;min-height:58px!important;white-space:normal!important;padding:9px 12px!important;margin:0 0 6px!important;border:1px solid #41546b!important;border-radius:8px!important;background:#1b293a!important;color:#fff!important;text-align:left!important;}
+.motion-app-row small{font-size:11px!important;color:#b5c6d7!important;}
+.motion-media-footer{display:flex!important;flex:none!important;align-items:center!important;justify-content:space-between!important;margin-top:6px!important;color:#c8d4e3!important;font-size:12px!important;}
+.motion-media-footer button{margin-left:5px!important;}
+.motion-app-dialog{background:#172333!important;color:#f2f6ff!important;padding:18px!important;border:1px solid #465a73!important;}
+.motion-app-dialog button{margin:4px 0!important;}
+.tv-home .tv-nav-dock nav > * {padding:0 7px!important;}
+.tv-home .tv-nav-dock nav > *+* {margin-left:1px!important;}
+@media(max-height:540px){.motion-media-card{min-height:83px!important;padding:9px!important;}.motion-media-card img{height:60px!important;}.motion-media-card strong{font-size:13px!important;}.motion-media-card small{font-size:11px!important;}.motion-app-row{min-height:49px!important;padding:6px 10px!important;}}
+@media(max-width:700px){.motion-media-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}.tv-home .tv-nav-dock nav > *{padding:0 5px!important;}.tv-home .tv-nav-dock nav svg{margin-right:3px!important;}}

@@ -11,6 +11,8 @@ import { TVHome } from "@/components/studio/TVHome";
 import { LibraryPage } from "@/components/studio/LibraryPage";
 import { WallpaperPage } from "@/components/studio/WallpaperPage";
 import { SettingsPage } from "@/components/studio/SettingsPage";
+import { StreamingPage } from "@/components/studio/StreamingPage";
+import { InstalledAppsPage } from "@/components/studio/InstalledAppsPage";
 import { WelcomePage, RecoveryPage } from "@/components/studio/WelcomePage";
 
 function TVLayout() {
@@ -29,8 +31,10 @@ const indexRoute = createRoute({getParentRoute:()=>rootRoute,path:"/",component:
 const launcherRoute = createRoute({getParentRoute:()=>rootRoute,path:"/launcher",component:TVHome});
 const libraryRoute = createRoute({getParentRoute:()=>rootRoute,path:"/library",component:LibraryPage});
 const wallpapersRoute = createRoute({getParentRoute:()=>rootRoute,path:"/wallpapers",component:WallpaperPage});
+const streamingRoute = createRoute({getParentRoute:()=>rootRoute,path:"/streaming",component:StreamingPage});
+const appsRoute = createRoute({getParentRoute:()=>rootRoute,path:"/apps",component:InstalledAppsPage});
 const settingsRoute = createRoute({getParentRoute:()=>rootRoute,path:"/settings",component:SettingsPage});
 const welcomeRoute = createRoute({getParentRoute:()=>rootRoute,path:"/welcome",component:WelcomePage});
 const onboardingRoute = createRoute({getParentRoute:()=>rootRoute,path:"/onboarding",component:WelcomePage});
 const recoveryRoute = createRoute({getParentRoute:()=>rootRoute,path:"/recovery",component:RecoveryPage});
-export const tvRouter = createRouter({routeTree:rootRoute.addChildren([indexRoute,launcherRoute,libraryRoute,wallpapersRoute,settingsRoute,welcomeRoute,onboardingRoute,recoveryRoute])});
+export const tvRouter = createRouter({routeTree:rootRoute.addChildren([indexRoute,launcherRoute,libraryRoute,wallpapersRoute,settingsRoute,streamingRoute,appsRoute,welcomeRoute,onboardingRoute,recoveryRoute])});

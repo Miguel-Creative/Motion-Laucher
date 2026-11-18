@@ -7,8 +7,8 @@ android {
   applicationId 'pro.creativezone.motionlauncher'
   minSdk 21
   targetSdk 32
-  versionCode 10028
-  versionName '1.0.28'
+  versionCode 10029
+  versionName '1.0.29'
  }
  signingConfigs {
   release {
@@ -29,4 +29,9 @@ android {
   release { minifyEnabled false; signingConfig signingConfigs.release }
  }
  compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
+dependencies {
+ implementation 'androidx.media3:media3-exoplayer:1.3.1'
+ implementation 'androidx.media3:media3-exoplayer-hls:1.3.1'
+ implementation 'androidx.media3:media3-ui:1.3.1'
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, LayoutGrid } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Shell } from "./Shell";
 import { TVSearchButton } from "./TVSearchButton";
 import { SettingControl } from "./SettingControl";
@@ -39,6 +40,7 @@ export function SettingsPage() {
     <div ref={options} className="settings-options" data-settings-zone="options">
      {filtered.map(s=><section key={s.id} className="settings-section">
       {needle&&<h3 className="settings-result-heading">{s.label}</h3>}
+      {s.id==="apps"&&<div className="setting-row"><div><label>Aplicativos instalados</label><p>Ver apps reais, versões, estado, detalhes, desinstalar ou desativar pelo Android.</p></div><div className="setting-input"><Button asChild><Link data-nav to="/apps"><LayoutGrid size={16}/>Gerenciar</Link></Button></div></div>}
       {s.items.filter(i=>!needle||`${s.label} ${i.label} ${i.description}`.toLocaleLowerCase("pt-BR").includes(needle)).map(def=><SettingControl key={def.id} def={def} tvControls/>)}
       <Button data-nav variant="outline" className="settings-reset" aria-label={`Restaurar ${s.label}`} onClick={()=>setRestore(s.id)}><RotateCcw/>Restaurar categoria</Button>
      </section>)}

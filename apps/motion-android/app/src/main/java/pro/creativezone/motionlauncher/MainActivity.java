@@ -4,6 +4,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.DefaultLoadControl;
+import androidx.media3.ui.PlayerView;
 import android.graphics.Color;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -48,6 +54,10 @@ public class MainActivity extends Activity {
     private WebView web;
     private FrameLayout root;
     private VideoView fireVideo;
+    private ExoPlayer mediaPlayer;
+    private PlayerView mediaView;
+    private boolean liveMedia;
+    private String mediaId;
     private File fireTemp;
     private int fireIndex = 0;
     private static final String[] FIRE_FILES = {"classic", "cozy", "logs"};
@@ -140,7 +150,7 @@ public class MainActivity extends Activity {
                 if (path != null && (path.equals("/api") || path.startsWith("/api/"))) return null;
                 if (request.isForMainFrame() && (path == null || path.equals("/") ||
                     path.equals("/launcher") || path.equals("/library") || path.equals("/wallpapers") ||
-                    path.equals("/settings") || path.equals("/welcome") || path.equals("/onboarding") || path.equals("/recovery"))) {
+                    path.equals("/settings") || path.equals("/streaming") || path.equals("/apps") || path.equals("/welcome") || path.equals("/onboarding") || path.equals("/recovery"))) {
                     path = "/index.html";
                 }
             }
@@ -235,7 +245,73 @@ public class MainActivity extends Activity {
         }
     }
 
+    private String approvedMediaUrl(String id) {
+        if (id == null) return null;
+        switch (id) {
+            case "tvbrasil": return "https://tvbrasil-stream.ebc.com.br/index.m3u8";
+            case "canalgov": return "https://canalgov-stream.ebc.com.br/index.m3u8";
+            case "tvcamara": return "https://stream3.camara.gov.br/tv1/manifest.m3u8";
+            case "france24": return "https://live.france24.com/hls/live/2037218/F24_EN_HI_HLS/master_5000.m3u8";
+            case "dw": return "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8";
+            case "bunny": return "https://video.blender.org/object-storage/web_videos/6402b77c-b61f-4a06-96ca-c8420a2becf4-480.mp4";
+            case "sintel": return "https://video.blender.org/object-storage/web_videos/0eb052d0-fd51-43e6-aa33-ecdbf77a5d40-480.mp4";
+            case "tears": return "https://video.blender.org/object-storage/web_videos/8533ea43-4271-4a57-9694-e9d0b35e1aa1-480.mp4";
+            case "sprite": return "https://video.blender.org/object-storage/web_videos/a69d68a5-a0e0-4a80-9d66-49f093c97aaf-720.mp4";
+            case "charge": return "https://video.blender.org/object-storage/web_videos/70528f27-fd51-479f-8144-4da805fbe4ba-720.mp4";
+            case "cam2": return "https://video.blender.org/object-storage/web_videos/fb70d459-48d2-4db5-adba-813c84f9200a-480.mp4";
+            case "cam3": return "https://video.blender.org/object-storage/web_videos/23f3ef79-15dc-44c5-aa45-cf92e78a4509-480.mp4";
+            default: return null;
+        }
+    }
+    private void closeMedia(boolean notify) {
+        if (mediaPlayer != null) {
+            if (!liveMedia && mediaId != null) {
+                long position = mediaPlayer.getCurrentPosition();
+                long duration = mediaPlayer.getDuration();
+                getPreferences(MODE_PRIVATE).edit().putLong("resume:"+mediaId, duration>0 && duration-position<10000 ? 0 : position).apply();
+            }
+            if (mediaView != null) mediaView.setPlayer(null);
+            mediaPlayer.release(); mediaPlayer=null;
+        }
+        if (mediaView != null) { root.removeView(mediaView); mediaView=null; }
+        getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (notify && web != null) {
+            web.setVisibility(View.VISIBLE); web.requestFocus();
+            web.evaluateJavascript("window.dispatchEvent(new Event('motion-media-closed'))",null);
+        }
+    }
+    private void playApprovedMedia(String id) {
+        String url=approvedMediaUrl(id);
+        if(url==null || web==null || root==null) return;
+        if(fireVideo!=null)closeFireplace();
+        closeMedia(false);
+        mediaId=id;liveMedia=url.endsWith(".m3u8");
+        try {
+            mediaPlayer=new ExoPlayer.Builder(this).setLoadControl(new DefaultLoadControl.Builder().setBufferDurationsMs(5000,15000,1000,2000).build()).build();
+            mediaPlayer.setTrackSelectionParameters(mediaPlayer.getTrackSelectionParameters().buildUpon().setMaxVideoSize(1280,720).setMaxVideoBitrate(2500000).build());
+            mediaView=new PlayerView(this);
+            mediaView.setPlayer(mediaPlayer);mediaView.setUseController(!liveMedia);
+            mediaView.setControllerShowTimeoutMs(2500);
+            root.setBackgroundColor(Color.BLACK);
+            web.setVisibility(View.INVISIBLE);
+            root.addView(mediaView,new FrameLayout.LayoutParams(-1,-1));
+            mediaPlayer.addListener(new Player.Listener(){
+                @Override public void onPlayerError(PlaybackException error){
+                    Toast.makeText(MainActivity.this,"Transmissão indisponível no momento",Toast.LENGTH_LONG).show();
+                    closeMedia(true);
+                }
+            });
+            mediaPlayer.setMediaItem(MediaItem.fromUri(url));
+            if(!liveMedia)mediaPlayer.seekTo(getPreferences(MODE_PRIVATE).getLong("resume:"+id,0));
+            mediaPlayer.prepare();mediaPlayer.play();mediaView.requestFocus();
+            getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }catch(Exception error){Log.e("MotionUI","Playback unavailable",error);closeMedia(true);Toast.makeText(this,"Não foi possível iniciar o vídeo",Toast.LENGTH_SHORT).show();}
+    }
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
+        if (mediaPlayer != null && event.getKeyCode()==KeyEvent.KEYCODE_BACK) {
+            if(event.getAction()==KeyEvent.ACTION_UP)closeMedia(true);
+            return true;
+        }
         if (fireVideo != null) {
             int key = event.getKeyCode();
             if (key == KeyEvent.KEYCODE_BACK || key == KeyEvent.KEYCODE_ENTER || key == KeyEvent.KEYCODE_DPAD_CENTER ||
@@ -253,6 +329,41 @@ public class MainActivity extends Activity {
 
     public final class NativeBridge {
         @JavascriptInterface public boolean isNative() { return true; }
+
+        @JavascriptInterface public void playMedia(String id) { runOnUiThread(()->playApprovedMedia(id)); }
+
+        @JavascriptInterface public String getManagedApps() {
+            JSONArray result=new JSONArray();PackageManager pm=getPackageManager();
+            for(ApplicationInfo app:pm.getInstalledApplications(0)) {
+                try {
+                    JSONObject row=new JSONObject();
+                    row.put("pkg",app.packageName);row.put("name",pm.getApplicationLabel(app).toString());
+                    row.put("enabled",app.enabled);row.put("system",(app.flags&ApplicationInfo.FLAG_SYSTEM)!=0);
+                    row.put("version",pm.getPackageInfo(app.packageName,0).versionName);
+                    row.put("self",app.packageName.equals(getPackageName()));
+                    row.put("launchable",pm.getLeanbackLaunchIntentForPackage(app.packageName)!=null||pm.getLaunchIntentForPackage(app.packageName)!=null);
+                    result.put(row);
+                }catch(Exception ignored){}
+            }
+            return result.toString();
+        }
+        @JavascriptInterface public void openAppDetails(String pkg) {
+            if(pkg==null||!pkg.matches("[A-Za-z0-9._]{3,180}"))return;
+            runOnUiThread(()->{
+                try { getPackageManager().getApplicationInfo(pkg,0);startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+pkg))); }
+                catch(Exception error){Toast.makeText(MainActivity.this,"Detalhes indisponíveis",Toast.LENGTH_SHORT).show();}
+            });
+        }
+        @JavascriptInterface public void requestUninstall(String pkg) {
+            if(pkg==null||pkg.equals(getPackageName())||!pkg.matches("[A-Za-z0-9._]{3,180}"))return;
+            runOnUiThread(()->{
+                try {
+                    ApplicationInfo info=getPackageManager().getApplicationInfo(pkg,0);
+                    if((info.flags&ApplicationInfo.FLAG_SYSTEM)!=0){Toast.makeText(MainActivity.this,"Gerencie este app de sistema nos ajustes do Android",Toast.LENGTH_SHORT).show();return;}
+                    startActivity(new Intent(Intent.ACTION_DELETE,Uri.parse("package:"+pkg)));
+                }catch(Exception error){Toast.makeText(MainActivity.this,"Desinstalação indisponível",Toast.LENGTH_SHORT).show();}
+            });
+        }
 
         @JavascriptInterface public void openFireplace(int index) { runOnUiThread(() -> playFireplace(index)); }
 
@@ -336,6 +447,7 @@ public class MainActivity extends Activity {
     }
 
     @Override public void onBackPressed() {
+        if(mediaPlayer!=null){closeMedia(true);return;}
         if (fireVideo != null) { closeFireplace(); return; }
         if (web != null) web.evaluateJavascript("(function(){if(document.querySelector('[data-ambient-active]')){window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));return true;}return false;})()", result -> {
             if (!"true".equals(result) && web != null) {
@@ -347,14 +459,17 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
-        if (web != null) web.onResume();
+        cachedAppsJson=null;
+        if (web != null) {web.onResume();web.evaluateJavascript("window.dispatchEvent(new Event('motion-apps-changed'))",null);}
     }
     @Override protected void onPause() {
+        if(mediaPlayer!=null)closeMedia(true);
         if (fireVideo != null) closeFireplace();
         if (web != null) web.onPause();
         super.onPause();
     }
     @Override protected void onDestroy() {
+        closeMedia(false);
         releaseFireVideo();
         if (networkManager != null && networkCallback != null) {
             try { networkManager.unregisterNetworkCallback(networkCallback); }
