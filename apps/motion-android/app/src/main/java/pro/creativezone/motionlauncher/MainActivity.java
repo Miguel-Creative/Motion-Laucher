@@ -4,12 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import androidx.media3.common.MediaItem;
-import androidx.media3.common.Player;
-import androidx.media3.common.PlaybackException;
-import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.exoplayer.DefaultLoadControl;
-import androidx.media3.ui.PlayerView;
 import android.graphics.Color;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -22,12 +16,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
-import android.view.KeyEvent;
-import android.view.Gravity;
 import android.widget.FrameLayout;
-import android.widget.VideoView;
 import java.io.File;
-import java.io.FileOutputStream;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -53,16 +43,6 @@ public class MainActivity extends Activity {
     private static final String LIVE_URL = "https://" + LIVE_HOST + "/";
     private WebView web;
     private FrameLayout root;
-    private VideoView fireVideo;
-    private ExoPlayer mediaPlayer;
-    private PlayerView mediaView;
-    private boolean liveMedia;
-    private String mediaId;
-    private File fireTemp;
-    private int fireIndex = 0;
-    private long fireOpenedAt = 0;
-    private int fireKeyDown = -1;
-    private static final String[] FIRE_FILES = {"classic", "cozy", "logs"};
     private boolean inOfflineMode = false;
     private volatile String cachedAppsJson;
     private ConnectivityManager networkManager;
@@ -152,7 +132,7 @@ public class MainActivity extends Activity {
                 if (path != null && (path.equals("/api") || path.startsWith("/api/"))) return null;
                 if (request.isForMainFrame() && (path == null || path.equals("/") ||
                     path.equals("/launcher") || path.equals("/library") || path.equals("/wallpapers") ||
-                    path.equals("/settings") || path.equals("/streaming") || path.equals("/apps") || path.equals("/welcome") || path.equals("/onboarding") || path.equals("/recovery"))) {
+                    path.equals("/settings") || path.equals("/apps") || path.equals("/welcome") || path.equals("/onboarding") || path.equals("/recovery"))) {
                     path = "/index.html";
                 }
             }
@@ -184,184 +164,8 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Only one local video decoder is active; no streaming or animated thumbnails. */
-    private void releaseFireVideo() {
-        if (fireVideo != null) {
-            fireVideo.stopPlayback();
-            root.removeView(fireVideo);
-            fireVideo = null;
-        }
-        if (fireTemp != null) {
-            fireTemp.delete();
-            fireTemp = null;
-        }
-    }
-
-    private void closeFireplace() {
-        releaseFireVideo();
-        getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        if (web != null) {
-            web.setVisibility(View.VISIBLE);
-            web.requestFocus();
-            web.evaluateJavascript("window.dispatchEvent(new Event('motion-fireplace-closed'))", null);
-        }
-    }
-
-    private void playFireplace(int index) {
-        if (index < 0 || index >= FIRE_FILES.length || root == null || web == null) return;
-        releaseFireVideo();
-        fireIndex = index;
-        fireOpenedAt = android.os.SystemClock.uptimeMillis();
-        fireKeyDown = -1;
-        try {
-            fireTemp = File.createTempFile("motion-fire-", ".mp4", getCacheDir());
-            try (InputStream input = getAssets().open("webroot/ambient/" + FIRE_FILES[index] + ".mp4");
-                 FileOutputStream out = new FileOutputStream(fireTemp)) {
-                byte[] buffer = new byte[32768];
-                int count;
-                while ((count = input.read(buffer)) != -1) out.write(buffer, 0, count);
-            }
-            web.setVisibility(View.INVISIBLE);
-            root.setBackgroundColor(Color.BLACK);
-            final VideoView video = new VideoView(this);
-            fireVideo = video;
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER);
-            root.addView(video, params);
-            video.setOnPreparedListener(player -> {
-                if (fireVideo != video) return;
-                player.setLooping(true);
-                getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                player.setVolume(0f, 0f);
-                video.start();
-            });
-            video.setOnErrorListener((player, what, extra) -> {
-                if (fireVideo == video) {
-                    Toast.makeText(this, "Não foi possível reproduzir a lareira", Toast.LENGTH_SHORT).show();
-                    Log.e("MotionUI", "Fireplace playback error " + what + "/" + extra);
-                    closeFireplace();
-                }
-                return true;
-            });
-            video.setOnClickListener(v -> { if(android.os.SystemClock.uptimeMillis()-fireOpenedAt>650) closeFireplace(); });
-            video.setVideoPath(fireTemp.getAbsolutePath());
-            video.requestFocus();
-        } catch (Exception e) {
-            Log.e("MotionUI", "Fireplace unavailable", e);
-            closeFireplace();
-            Toast.makeText(this, "Lareira indisponível", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private String approvedMediaUrl(String id) {
-        if(id==null)return null;
-        switch(id){
-            case "sbtinterior": return "https://cdn.jmvstream.com/w/LVW-10801/LVW10801_Xvg4R0u57n/playlist.m3u8";
-            case "recordnews": return "https://rnw-rn.otteravision.com/rnw/rn/rnw_rn.m3u8";
-            case "tvcultura": return "https://player-tvcultura.stream.uol.com.br/live/tvcultura.m3u8";
-            default:return null;
-        }
-    }
-    private String officialChannelUrl(String id) {
-        if(id==null)return null;
-        switch(id){
-            case "globo": return "https://globoplay.globo.com/agora-na-tv/";
-            case "sbt": return "https://www.sbt.com.br/ao-vivo";
-            case "record": return "https://descubra.recordplus.com/";
-            case "band": return "https://www.band.com.br/ao-vivo";
-            case "redetv": return "https://www.redetv.uol.com.br/aovivo";
-            case "gazeta": return "https://www.tvgazeta.com.br/aovivo/";
-            default:return null;
-        }
-    }
-    private void closeMedia(boolean notify) {
-        if (mediaPlayer != null) {
-            if (!liveMedia && mediaId != null) {
-                long position = mediaPlayer.getCurrentPosition();
-                long duration = mediaPlayer.getDuration();
-                getPreferences(MODE_PRIVATE).edit().putLong("resume:"+mediaId, duration>0 && duration-position<10000 ? 0 : position).apply();
-            }
-            if (mediaView != null) mediaView.setPlayer(null);
-            mediaPlayer.release(); mediaPlayer=null;
-        }
-        if (mediaView != null) { root.removeView(mediaView); mediaView=null; }
-        getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        if (notify && web != null) {
-            web.setVisibility(View.VISIBLE); web.requestFocus();
-            web.evaluateJavascript("window.dispatchEvent(new Event('motion-media-closed'))",null);
-        }
-    }
-    private void playApprovedMedia(String id) {
-        String url=approvedMediaUrl(id);
-        if(url==null){
-            String official=officialChannelUrl(id);
-            if(official!=null){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(official)));}catch(Exception e){Toast.makeText(this,"Não há navegador disponível",Toast.LENGTH_SHORT).show();}}
-            return;
-        }
-        if(web==null || root==null)return;
-        if(fireVideo!=null)closeFireplace();
-        closeMedia(false);
-        mediaId=id;liveMedia=url.endsWith(".m3u8");
-        try {
-            mediaPlayer=new ExoPlayer.Builder(this).setLoadControl(new DefaultLoadControl.Builder().setBufferDurationsMs(5000,15000,1000,2000).build()).build();
-            mediaPlayer.setTrackSelectionParameters(mediaPlayer.getTrackSelectionParameters().buildUpon().setMaxVideoSize(1280,720).setMaxVideoBitrate(2500000).build());
-            mediaView=new PlayerView(this);
-            mediaView.setPlayer(mediaPlayer);mediaView.setUseController(!liveMedia);
-            mediaView.setControllerShowTimeoutMs(2500);
-            root.setBackgroundColor(Color.BLACK);
-            web.setVisibility(View.INVISIBLE);
-            root.addView(mediaView,new FrameLayout.LayoutParams(-1,-1));
-            mediaPlayer.addListener(new Player.Listener(){
-                @Override public void onPlayerError(PlaybackException error){
-                    Toast.makeText(MainActivity.this,"Transmissão indisponível no momento",Toast.LENGTH_LONG).show();
-                    closeMedia(true);
-                }
-            });
-            mediaPlayer.setMediaItem(MediaItem.fromUri(url));
-            if(!liveMedia)mediaPlayer.seekTo(getPreferences(MODE_PRIVATE).getLong("resume:"+id,0));
-            mediaPlayer.prepare();mediaPlayer.play();mediaView.requestFocus();
-            getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        }catch(Exception error){Log.e("MotionUI","Playback unavailable",error);closeMedia(true);Toast.makeText(this,"Não foi possível iniciar o vídeo",Toast.LENGTH_SHORT).show();}
-    }
-    @Override public boolean dispatchKeyEvent(KeyEvent event) {
-        if (mediaPlayer != null && event.getKeyCode()==KeyEvent.KEYCODE_BACK) {
-            if(event.getAction()==KeyEvent.ACTION_UP)closeMedia(true);
-            return true;
-        }
-        if (fireVideo != null) {
-            int key = event.getKeyCode();
-            if (key == KeyEvent.KEYCODE_BACK || key == KeyEvent.KEYCODE_ENTER || key == KeyEvent.KEYCODE_DPAD_CENTER ||
-                key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount()==0) {
-                    fireKeyDown = android.os.SystemClock.uptimeMillis()-fireOpenedAt>500 ? key : -1;
-                }
-                if (event.getAction() == KeyEvent.ACTION_UP && fireKeyDown==key) {
-                    fireKeyDown=-1;
-                    if (key == KeyEvent.KEYCODE_DPAD_LEFT) playFireplace((fireIndex + FIRE_FILES.length - 1) % FIRE_FILES.length);
-                    else if (key == KeyEvent.KEYCODE_DPAD_RIGHT) playFireplace((fireIndex + 1) % FIRE_FILES.length);
-                    else closeFireplace();
-                }
-                return true;
-            }
-        }
-        return super.dispatchKeyEvent(event);
-    }
-
     public final class NativeBridge {
         @JavascriptInterface public boolean isNative() { return true; }
-
-        @JavascriptInterface public void playMedia(String id) { runOnUiThread(()->playApprovedMedia(id)); }
-        @JavascriptInterface public String getResumeMedia() {
-            JSONArray ids=new JSONArray();
-            java.util.Map<String,?> values=getPreferences(MODE_PRIVATE).getAll();
-            for(java.util.Map.Entry<String,?> v:values.entrySet()) {
-                if(v.getKey().startsWith("resume:") && v.getValue() instanceof Long && ((Long)v.getValue())>10000L) {
-                    String id=v.getKey().substring(7);
-                    String url=approvedMediaUrl(id);
-                    if(url!=null && !url.endsWith(".m3u8")) ids.put(id);
-                }
-            }
-            return ids.toString();
-        }
 
         @JavascriptInterface public String getManagedApps() {
             JSONArray result=new JSONArray();PackageManager pm=getPackageManager();
@@ -399,7 +203,6 @@ public class MainActivity extends Activity {
             });
         }
 
-        @JavascriptInterface public void openFireplace(int index) { runOnUiThread(() -> playFireplace(index)); }
 
         @JavascriptInterface public String getInstalledApps() {
             if (cachedAppsJson != null) return cachedAppsJson;
@@ -445,6 +248,8 @@ public class MainActivity extends Activity {
                     Intent target = pm.getLeanbackLaunchIntentForPackage(pkg);
                     if (target == null) target = pm.getLaunchIntentForPackage(pkg);
                     if (target == null) throw new IllegalStateException("Not installed");
+                    // Launch from the HOME task into the TV app's own task.
+                    target.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
                     startActivity(target);
                 } catch (Exception e) {
                     Toast.makeText(MainActivity.this, "Aplicativo indisponível", Toast.LENGTH_SHORT).show();
@@ -481,8 +286,6 @@ public class MainActivity extends Activity {
     }
 
     @Override public void onBackPressed() {
-        if(mediaPlayer!=null){closeMedia(true);return;}
-        if (fireVideo != null) { closeFireplace(); return; }
         if (web != null) web.evaluateJavascript("(function(){if(document.querySelector('[data-ambient-active], [role=dialog][data-state=open]')){window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));return true;}return false;})()", result -> {
             if (!"true".equals(result) && web != null) {
                 if (web.canGoBack()) web.goBack();
@@ -494,17 +297,13 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         cachedAppsJson=null;
-        if (web != null) {web.onResume();web.evaluateJavascript("window.dispatchEvent(new Event('motion-apps-changed'))",null);}
+        if (web != null) {web.onResume();web.evaluateJavascript("window.dispatchEvent(new Event('motion-apps-changed'));window.dispatchEvent(new Event('motion-foreground'))",null);}
     }
     @Override protected void onPause() {
-        if(mediaPlayer!=null)closeMedia(true);
-        if (fireVideo != null) closeFireplace();
-        if (web != null) web.onPause();
+        if (web != null) {web.evaluateJavascript("window.dispatchEvent(new Event('motion-background'))",null);web.onPause();}
         super.onPause();
     }
     @Override protected void onDestroy() {
-        closeMedia(false);
-        releaseFireVideo();
         if (networkManager != null && networkCallback != null) {
             try { networkManager.unregisterNetworkCallback(networkCallback); }
             catch (Exception ignored) {}
