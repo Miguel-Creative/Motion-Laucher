@@ -9,6 +9,7 @@
   <intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent>
   <intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LEANBACK_LAUNCHER"/></intent>
   <package android:name="com.htc.htcsettings"/>
+  <package android:name="com.softwinner.awsource"/>
  </queries>
  <application android:allowBackup="true" android:usesCleartextTraffic="false"
   android:label="Motion Launcher" android:icon="@drawable/motion_brand"

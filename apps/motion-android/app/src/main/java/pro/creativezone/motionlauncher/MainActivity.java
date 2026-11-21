@@ -257,6 +257,21 @@ public class MainActivity extends Activity {
             });
         }
 
+        @JavascriptInterface public void openInputSources() {
+            runOnUiThread(() -> {
+                try {
+                    // Source picker is a firmware activity without a LAUNCHER intent.
+                    // It was verified on HY300por: com.softwinner.awsource/.MainActivity.
+                    Intent source = new Intent(Intent.ACTION_MAIN);
+                    source.setClassName("com.softwinner.awsource", "com.softwinner.awsource.MainActivity");
+                    startActivity(source);
+                } catch (Exception error) {
+                    Log.w("MotionUI", "HDMI source picker unavailable", error);
+                    Toast.makeText(MainActivity.this, "Entrada HDMI indisponível", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
         @JavascriptInterface public void openProjectorSettings() {
             runOnUiThread(() -> {
                 try {
