@@ -260,14 +260,35 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void openInputSources() {
             runOnUiThread(() -> {
                 try {
-                    // Source picker is a firmware activity without a LAUNCHER intent.
-                    // It was verified on HY300por: com.softwinner.awsource/.MainActivity.
-                    Intent source = new Intent(Intent.ACTION_MAIN);
-                    source.setClassName("com.softwinner.awsource", "com.softwinner.awsource.MainActivity");
-                    startActivity(source);
+                    // Choose the source explicitly: the vendor's picker can auto-enter
+                    // the last HDMI source when navigated using some TV remotes.
+                    final String[] choices = {"HDMI 1", "HDMI 2", "HDMI 3", "Outras entradas (AV)"};
+                    new android.app.AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Selecionar entrada")
+                        .setItems(choices, (dialog, which) -> {
+                            try {
+                                Intent source = new Intent(Intent.ACTION_MAIN);
+                                if (which < 3) {
+                                    // Verified from the HY300por vendor AwSource app.
+                                    source.setClassName("com.softwinner.awlivetv", "com.softwinner.awlivetv.MainActivity");
+                                    source.putExtra("input_source", "HDMI" + (which + 1));
+                                    // Recreate the vendor player to apply changes even
+                                    // when an older HDMI activity remains in the task.
+                                    source.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                } else {
+                                    source.setClassName("com.softwinner.awsource", "com.softwinner.awsource.MainActivity");
+                                }
+                                startActivity(source);
+                            } catch (Exception error) {
+                                Log.w("MotionUI", "HDMI input could not be opened", error);
+                                Toast.makeText(MainActivity.this, "Entrada indisponível", Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .setNegativeButton("Cancelar", null)
+                        .show();
                 } catch (Exception error) {
-                    Log.w("MotionUI", "HDMI source picker unavailable", error);
-                    Toast.makeText(MainActivity.this, "Entrada HDMI indisponível", Toast.LENGTH_SHORT).show();
+                    Log.w("MotionUI", "HDMI source menu unavailable", error);
+                    Toast.makeText(MainActivity.this, "Seleção HDMI indisponível", Toast.LENGTH_SHORT).show();
                 }
             });
         }
