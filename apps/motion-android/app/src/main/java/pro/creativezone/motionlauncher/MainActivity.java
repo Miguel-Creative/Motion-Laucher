@@ -304,6 +304,41 @@ public class MainActivity extends Activity {
             });
         }
 
+        @JavascriptInterface public void openBluetoothAudioSettings() {
+            runOnUiThread(() -> {
+                // Android owns discoverability, pairing and A2DP audio routing.
+                // Opening system settings needs no Bluetooth/location permission;
+                // do not attempt hidden APIs or override the speaker route.
+                try {
+                    startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+                    Toast.makeText(MainActivity.this,
+                        "Ative o modo de pareamento do fone e selecione-o no Bluetooth.",
+                        Toast.LENGTH_LONG).show();
+                    return;
+                } catch (Exception unavailable) {
+                    Log.w("MotionUI", "Bluetooth settings unavailable on this firmware", unavailable);
+                }
+                // Vendor projectors may have only a generic devices/settings pane.
+                try {
+                    startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+                    return;
+                } catch (Exception unavailable) {
+                    Log.w("MotionUI", "Wireless settings unavailable", unavailable);
+                }
+                try {
+                    startActivity(new Intent(Settings.ACTION_SETTINGS));
+                    Toast.makeText(MainActivity.this,
+                        "Procure Bluetooth nas configurações do projetor.",
+                        Toast.LENGTH_LONG).show();
+                } catch (Exception unavailable) {
+                    Log.w("MotionUI", "Android settings unavailable", unavailable);
+                    Toast.makeText(MainActivity.this,
+                        "Bluetooth não disponível neste projetor ou firmware.",
+                        Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
         @JavascriptInterface public void openAndroidSettings() {
             runOnUiThread(() -> {
                 try { startActivity(new Intent(Settings.ACTION_SETTINGS)); }

@@ -7,6 +7,7 @@ export interface MotionNativeBridge {
   launchPackage(pkg: string): void;
   openInputSources?(): void;
   openProjectorSettings(): void;
+  openBluetoothAudioSettings?(): void;
   openAndroidSettings(): void;
   reload(): void;
   getManagedApps?(): string;
