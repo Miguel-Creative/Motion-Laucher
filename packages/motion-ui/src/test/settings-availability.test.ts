@@ -3,7 +3,8 @@ import { ALL_SETTINGS, findSetting, settingStatus } from "@/lib/settings-schema"
 describe("Disponibilidade dos ajustes da TV",()=>{
  const status=(id:string)=>settingStatus(findSetting(id)!,true);
  it("preserva todas as opções e identifica as pendentes",()=>{
-  expect(ALL_SETTINGS).toHaveLength(141);
+  expect(ALL_SETTINGS).toHaveLength(142);
+   expect(status("audio.bluetoothHeadphones").ready).toBe(true);
   expect(status("wallpaper.rotation").ready).toBe(true);
   expect(status("display.keystone").ready).toBe(true);
   expect(status("profiles.kids")).toMatchObject({ready:false,label:"Em breve"});

@@ -45,6 +45,18 @@ export async function runSettingAction(action: string, navigate: Navigate) {
         description:"No projetor: Configurações → Tela e projeção → Zoom / Keystone. A prévia web não controla o firmware."
       });
     }
+    case "open-bluetooth-audio": {
+      // Web previews cannot pair Bluetooth devices or reroute Android audio.
+      // The native bridge opens the projector's actual Bluetooth settings.
+      const native=(window as Window & {MotionNative?:{openBluetoothAudioSettings?:()=>void}}).MotionNative;
+      if(typeof native?.openBluetoothAudioSettings==="function") {
+        native.openBluetoothAudioSettings();
+        return;
+      }
+      return toast.info("Conecte seu fone pelo projetor", {
+        description:"Instale a versão atualizada do Motion Launcher no projetor. Depois abra Ajustes → Áudio e Mídia → Conectar fone Bluetooth. A prévia web não pode parear dispositivos."
+      });
+    }
     case "open-wallpapers":
       return navigate("/wallpapers");
     case "open-remote":
